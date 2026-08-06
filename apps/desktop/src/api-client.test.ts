@@ -48,4 +48,16 @@ describe("login", () => {
     });
     await expect(login("user@example.com", "wrong")).rejects.toBeInstanceOf(ApiError);
   });
+
+  it("wraps a network-level failure (server unreachable) in a friendly ApiError instead of the raw browser error", async () => {
+    // fetch() itself rejects on a connection failure — no Response at all.
+    global.fetch = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    }) as never;
+
+    await expect(login("user@example.com", "password123")).rejects.toMatchObject({
+      code: "NETWORK_ERROR",
+      message: expect.not.stringContaining("Failed to fetch"),
+    });
+  });
 });

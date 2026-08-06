@@ -48,7 +48,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers.set("content-type", "application/json");
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  } catch {
+    // fetch() itself rejects (server unreachable, DNS failure, offline) with a
+    // raw browser TypeError ("Failed to fetch") — not useful shown to a user.
+    throw new ApiError("NETWORK_ERROR", "Could not reach Omnira. Check that the server is running.");
+  }
 
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as ApiErrorEnvelope | null;
