@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { Mic } from "lucide-react";
+import type { PointerEvent, ReactNode } from "react";
 import { VoiceState } from "./tokens.js";
 
 export interface MicButtonProps {
@@ -37,6 +38,27 @@ export function MicButton({
   const label = disabled ? (disabledReason ?? "Voice is unavailable") : STATE_LABEL[state];
   const iconSize = size === "lg" ? 40 : 18;
 
+  // Pointer capture keeps the press "attached" to this button even if the
+  // cursor/finger drifts off its (fairly small) bounds mid-hold — without
+  // it, a plain onPointerLeave cut recordings short constantly, since the
+  // orb is a circle and any movement near its edge left the hit area.
+  // Capture guarantees onPointerUp still fires here on release, wherever
+  // that happens; onPointerCancel is the fallback for the cases even
+  // capture can't cover (an OS gesture interrupting, losing the pointer).
+  function handlePressStart(event: PointerEvent<HTMLButtonElement>): void {
+    // Feature-detected, not just try/catch'd: jsdom (unit tests) doesn't
+    // implement the Pointer Capture API at all, and it costs nothing to be
+    // defensive about a real but less-common webview lacking it too.
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    onPressStart();
+  }
+  function handlePressEnd(event: PointerEvent<HTMLButtonElement>): void {
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    onPressEnd();
+  }
+
   return (
     <button
       type="button"
@@ -47,9 +69,9 @@ export function MicButton({
       data-size={size}
       data-disabled={disabled ? "true" : "false"}
       className="omnira-orb"
-      onPointerDown={disabled ? undefined : onPressStart}
-      onPointerUp={disabled ? undefined : onPressEnd}
-      onPointerLeave={disabled ? undefined : onPressEnd}
+      onPointerDown={disabled ? undefined : handlePressStart}
+      onPointerUp={disabled ? undefined : handlePressEnd}
+      onPointerCancel={disabled ? undefined : handlePressEnd}
     >
       {size === "lg" && (
         <>
@@ -63,14 +85,8 @@ export function MicButton({
       <span className="omnira-orb__ring" aria-hidden="true" />
       <span className="omnira-orb__ring omnira-orb__ring--inner" aria-hidden="true" />
       <span className="omnira-orb__core" aria-hidden="true">
-        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none">
-          <path
-            d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          />
-          <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
+        {size === "lg" && <span className="omnira-orb__scan" aria-hidden="true" />}
+        <Mic size={iconSize} strokeWidth={1.8} />
       </span>
     </button>
   );

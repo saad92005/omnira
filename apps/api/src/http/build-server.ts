@@ -12,6 +12,7 @@ import { registerAuthRoutes } from "../routes/auth.js";
 import { registerPermissionRoutes } from "../routes/permissions.js";
 import { registerChatRoutes } from "../routes/chat.js";
 import { registerVoiceRoutes } from "../routes/voice.js";
+import { registerNewsRoutes } from "../routes/news.js";
 
 export interface AppDependencies {
   config: AppConfig;
@@ -85,6 +86,7 @@ export function buildServer(deps: AppDependencies): FastifyInstance {
       registerPermissionRoutes(v1, permissionsService, deps.config.JWT_ACCESS_SECRET);
       registerChatRoutes(v1, deps.config, deps.logger, permissionsService, conversationsService);
       registerVoiceRoutes(v1, deps.config, permissionsService);
+      registerNewsRoutes(v1, deps.config);
     },
     { prefix: "/v1" },
   );

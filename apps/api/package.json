@@ -27,6 +27,7 @@
     "@omnira/voice": "workspace:*",
     "@prisma/adapter-neon": "6.19.3",
     "@prisma/client": "catalog:",
+    "fast-xml-parser": "^5.10.1",
     "fastify": "catalog:",
     "jose": "catalog:",
     "zod": "catalog:"

@@ -1,18 +1,34 @@
+import {
+  Cloud,
+  CloudFog,
+  CloudLightning,
+  CloudRain,
+  CloudSnow,
+  Download,
+  Mic2,
+  Send,
+  ShieldCheck,
+  Sun,
+  Wifi,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Button, MessageBubble, MicButton, TypingIndicator, VoiceState, useTilt3D } from "@omnira/ui-kit";
 import {
   ApiError,
   getActiveCapabilities,
   getConversationMessages,
+  getNewsHeadlines,
   isVoiceAvailable,
   listConversations,
   sendChatMessage,
   transcribeAudio,
   type ConversationSummary,
+  type NewsHeadline,
 } from "../api-client.js";
 import { runClientAction } from "../client-actions.js";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder.js";
 import { speak } from "../speech.js";
+import { getCurrentWeather, type CurrentWeather } from "../weather.js";
 import { ConversationSidebar } from "./ConversationSidebar.js";
 
 interface DisplayMessage {
@@ -31,6 +47,17 @@ const STATE_TEXT: Record<VoiceState | "idle", string> = {
   [VoiceState.AwaitingConfirmation]: "Awaiting confirmation…",
 };
 
+/** Maps Open-Meteo's WMO weather codes to a representative icon. */
+function weatherIcon(code: number): typeof Sun {
+  if (code === 0 || code === 1) return Sun;
+  if (code === 2 || code === 3) return Cloud;
+  if (code === 45 || code === 48) return CloudFog;
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return CloudRain;
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return CloudSnow;
+  if (code >= 95) return CloudLightning;
+  return Cloud;
+}
+
 export function ChatView(): ReactNode {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState("");
@@ -44,6 +71,8 @@ export function ChatView(): ReactNode {
   const [voiceState, setVoiceState] = useState<VoiceState | "idle">("idle");
   const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem(VOICE_MODE_KEY) === "true");
   const [now, setNow] = useState(() => new Date());
+  const [weather, setWeather] = useState<CurrentWeather | null>(null);
+  const [headlines, setHeadlines] = useState<NewsHeadline[]>([]);
 
   const recorder = useVoiceRecorder();
   const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
@@ -67,6 +96,13 @@ export function ChatView(): ReactNode {
       .then((active) => setSystemControlGranted(active.has("system_control")))
       .catch(() => undefined);
     refreshConversations();
+    // Best-effort and silent: a denied location prompt or offline moment
+    // just means no weather widget, never an error banner over something
+    // this ambient.
+    getCurrentWeather().then(setWeather);
+    getNewsHeadlines()
+      .then(setHeadlines)
+      .catch(() => undefined);
   }, [refreshConversations]);
 
   useEffect(() => {
@@ -195,8 +231,13 @@ export function ChatView(): ReactNode {
     setVoiceState(VoiceState.Listening);
     try {
       await recorder.start();
-    } catch {
-      setError("Could not access the microphone.");
+    } catch (err) {
+      const message = err instanceof Error && err.name === "NotAllowedError"
+        ? "Microphone access was blocked. Check your browser's site permissions."
+        : err instanceof Error
+          ? `Could not access the microphone: ${err.message}`
+          : "Could not access the microphone.";
+      setError(message);
       setVoiceState("idle");
     }
   }
@@ -218,7 +259,13 @@ export function ChatView(): ReactNode {
         setVoiceState("idle");
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not transcribe that. Try again.");
+      // Surface the real error whenever there is one (a recorder failure,
+      // an empty recording, an actual server message) instead of a generic
+      // string that hides what actually went wrong — that genericness was
+      // exactly what made an earlier real bug here hard to diagnose.
+      const message =
+        err instanceof ApiError || err instanceof Error ? err.message : "Could not transcribe that. Try again.";
+      setError(message);
       setVoiceState("idle");
     }
   }
@@ -227,23 +274,39 @@ export function ChatView(): ReactNode {
     <div className="omnira-hud-shell">
       <div className="omnira-hud-grid" aria-hidden="true" />
 
-      <header className="omnira-hud-topbar omnira-glass omnira-hud-panel" style={headerStyle}>
+      <header className="omnira-hud-topbar omnira-glass omnira-hud-panel omnira-boot-topbar" style={headerStyle}>
         <h1 className="omnira-gradient-text" style={{ fontSize: "var(--omnira-text-lg)", fontWeight: 700, margin: 0 }}>
           OMNIRA
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--omnira-space-4)" }}>
           <span className="omnira-hud-indicator" data-active={micGranted}>
+            <Mic2 size={12} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
             Mic
           </span>
           <span className="omnira-hud-indicator" data-active={systemControlGranted}>
+            <ShieldCheck size={12} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
             Sys
           </span>
           <span className="omnira-hud-indicator" data-active={apiReachable}>
+            <Wifi size={12} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
             Net
           </span>
+          {weather && (
+            <span
+              className="omnira-hud-indicator"
+              data-active="true"
+              title={weather.label}
+            >
+              {(() => {
+                const WeatherIcon = weatherIcon(weather.code);
+                return <WeatherIcon size={13} strokeWidth={2} aria-hidden="true" />;
+              })()}
+              {weather.temperatureC}°C
+            </span>
+          )}
           <span className="omnira-hud-value" style={{ fontSize: "var(--omnira-text-sm)" }}>
             {now.toLocaleTimeString()}
           </span>
@@ -262,17 +325,18 @@ export function ChatView(): ReactNode {
         </div>
       </header>
 
-      <div className="omnira-hud-sidebar">
+      <div className="omnira-hud-sidebar omnira-boot-sidebar">
         <ConversationSidebar
           conversations={conversations}
           activeConversationId={conversationId}
           onSelect={(id) => void handleSelectConversation(id)}
           onNewChat={handleNewChat}
+          headlines={headlines}
         />
       </div>
 
       <div className="omnira-hud-center" style={centerStyle}>
-        <div style={{ position: "relative", display: "inline-flex" }}>
+        <div className="omnira-boot-center" style={{ position: "relative", display: "inline-flex" }}>
           <span className="omnira-hud-radar" aria-hidden="true" />
           <MicButton
             state={voiceState}
@@ -286,6 +350,9 @@ export function ChatView(): ReactNode {
         <p className="omnira-hud-label" style={{ marginTop: "var(--omnira-space-4)" }}>
           {STATE_TEXT[voiceState]}
         </p>
+        <p className="omnira-boot-text" style={{ margin: 0, height: 16 }} aria-hidden="true">
+          Omnira online
+        </p>
         {error && (
           <p role="alert" style={{ color: "var(--omnira-danger)", fontSize: "var(--omnira-text-sm)", textAlign: "center" }}>
             {error}
@@ -297,7 +364,7 @@ export function ChatView(): ReactNode {
         ref={commLogTilt.ref}
         onPointerMove={commLogTilt.onPointerMove}
         onPointerLeave={commLogTilt.onPointerLeave}
-        className="omnira-hud-commlog omnira-glass omnira-hud-panel omnira-tilt-3d"
+        className="omnira-hud-commlog omnira-glass omnira-hud-panel omnira-tilt-3d omnira-boot-commlog"
         style={commLogStyle}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -309,10 +376,18 @@ export function ChatView(): ReactNode {
               type="button"
               onClick={handleExportConversation}
               className="omnira-hud-label"
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--omnira-accent-2)" }}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--omnira-accent-2)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
               title="Download this conversation as a Markdown file"
             >
-              Export ⬇
+              <Download size={13} strokeWidth={2} /> Export
             </button>
           )}
         </div>
@@ -330,7 +405,7 @@ export function ChatView(): ReactNode {
         <div ref={scrollAnchorRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="omnira-hud-console omnira-glass omnira-hud-panel" style={consoleStyle}>
+      <form onSubmit={handleSubmit} className="omnira-hud-console omnira-glass omnira-hud-panel omnira-boot-console" style={consoleStyle}>
         <input
           ref={inputRef}
           value={input}
@@ -343,7 +418,9 @@ export function ChatView(): ReactNode {
           style={{ flex: 1, border: "none", background: "transparent" }}
         />
         <Button type="submit" disabled={sending || !input.trim()}>
-          Send
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            Send <Send size={14} strokeWidth={2} />
+          </span>
         </Button>
       </form>
     </div>

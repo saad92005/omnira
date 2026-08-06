@@ -8,6 +8,7 @@ import {
   listConversations,
   login,
   setTokens,
+  transcribeAudio,
 } from "./api-client.js";
 
 const originalFetch = global.fetch;
@@ -98,6 +99,47 @@ describe("conversations", () => {
 
     const messages = await getConversationMessages("c1");
     expect(messages).toEqual([{ role: "user", content: "hi" }]);
+  });
+});
+
+describe("transcribeAudio", () => {
+  it("names the uploaded file to match the recorded blob's real MIME type, not a hardcoded .webm", async () => {
+    setTokens("access-1", "refresh-1");
+    let capturedForm: FormData | undefined;
+    global.fetch = vi.fn(async (_url, init) => {
+      capturedForm = init?.body as FormData;
+      return new Response(JSON.stringify({ text: "hello" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as never;
+
+    // iOS Safari records audio/mp4, never audio/webm -- this is exactly the
+    // case a hardcoded ".webm" filename got wrong.
+    const audio = new Blob([new Uint8Array([1, 2, 3])], { type: "audio/mp4" });
+    const text = await transcribeAudio(audio);
+
+    expect(text).toBe("hello");
+    const file = capturedForm?.get("file") as File;
+    expect(file.name).toBe("utterance.m4a");
+  });
+
+  it("falls back to .webm for an unrecognized or missing MIME type", async () => {
+    setTokens("access-1", "refresh-1");
+    let capturedForm: FormData | undefined;
+    global.fetch = vi.fn(async (_url, init) => {
+      capturedForm = init?.body as FormData;
+      return new Response(JSON.stringify({ text: "hello" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as never;
+
+    const audio = new Blob([new Uint8Array([1, 2, 3])]);
+    await transcribeAudio(audio);
+
+    const file = capturedForm?.get("file") as File;
+    expect(file.name).toBe("utterance.webm");
   });
 });
 

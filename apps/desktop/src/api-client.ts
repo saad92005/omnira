@@ -137,9 +137,33 @@ export async function getConversationMessages(conversationId: string): Promise<P
   return result.messages;
 }
 
+export interface NewsHeadline {
+  title: string;
+  link: string;
+}
+
+export async function getNewsHeadlines(): Promise<NewsHeadline[]> {
+  const result = await request<{ headlines: NewsHeadline[] }>("/news/headlines");
+  return result.headlines;
+}
+
+const AUDIO_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
+  "audio/webm": "webm",
+  "audio/mp4": "m4a",
+  "audio/ogg": "ogg",
+  "audio/wav": "wav",
+  "audio/mpeg": "mp3",
+};
+
 export async function transcribeAudio(audio: Blob): Promise<string> {
+  // The recorded blob's actual format varies by browser (iOS Safari records
+  // audio/mp4, not audio/webm — see useVoiceRecorder.ts) — a hardcoded
+  // ".webm" filename regardless of the real format was misleading the
+  // server's format detection for any browser that doesn't record WebM.
+  const baseType = audio.type.split(";")[0]?.trim() ?? "";
+  const extension = AUDIO_EXTENSION_BY_MIME_TYPE[baseType] ?? "webm";
   const form = new FormData();
-  form.append("file", audio, "utterance.webm");
+  form.append("file", audio, `utterance.${extension}`);
   const result = await request<{ text: string }>("/voice/transcribe", { method: "POST", body: form });
   return result.text;
 }

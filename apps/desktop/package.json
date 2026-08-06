@@ -15,6 +15,7 @@
   "dependencies": {
     "@omnira/ui-kit": "workspace:*",
     "@tauri-apps/api": "catalog:",
+    "lucide-react": "^1.29.0",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
