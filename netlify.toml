@@ -19,6 +19,13 @@
 [functions]
   directory = "apps/api/netlify/functions"
   node_bundler = "esbuild"
+  # Prisma's engineType="client" query compiler loads its .wasm file via a
+  # real fs.readFileSync at a real path, not a require()/import esbuild's
+  # static analysis can trace and inline -- verified locally by running
+  # Netlify's own bundler (@netlify/zip-it-and-ship-it) and finding the file
+  # genuinely missing from the output. This forces Netlify to copy it
+  # alongside the bundle regardless of what esbuild's tracing found.
+  included_files = ["apps/api/src/generated/prisma/*.wasm"]
 
 # Order matters: Netlify matches redirects top-to-bottom, first hit wins.
 # The API rewrite must come before the SPA catch-all below, or every /v1/*

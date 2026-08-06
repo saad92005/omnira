@@ -10,14 +10,16 @@
 // bundler ("Cannot find module '.prisma/client/default'"), independent of
 // whether the client is used with a driver adapter or not.
 generator client {
-  provider      = "prisma-client-js"
-  output        = "../src/generated/prisma"
-  // "native" keeps local dev/tests working on whatever platform runs
-  // `prisma generate` (Windows here); "rhel-openssl-3.0.x" is the correct
-  // target for Netlify Functions' AWS Lambda runtime (Amazon Linux
-  // 2023/glibc) regardless of what platform Netlify's own build step runs
-  // `prisma generate` on.
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider   = "prisma-client-js"
+  output     = "../src/generated/prisma"
+  // "client" is Prisma's adapter-only engine mode: no native query-engine
+  // binary at all (WASM query compiler instead), which is what
+  // PrismaNeonHTTP (apps/api/src/db.ts) actually needs -- the default
+  // "library" engine type still validates for a native binary at runtime
+  // even when an adapter is supplied ("Prisma Client could not locate the
+  // Query Engine for runtime..."), which is what broke this on Netlify
+  // Functions despite the adapter already being wired up correctly.
+  engineType = "client"
 }
 
 datasource db {
