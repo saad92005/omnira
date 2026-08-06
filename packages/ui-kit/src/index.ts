@@ -12,3 +12,6 @@ export { TypingIndicator } from "./TypingIndicator.js";
 export { AuroraBackground } from "./AuroraBackground.js";
 
 export { spacing, VoiceState, VOICE_STATE_COLOR_TOKEN } from "./tokens.js";
+
+export { useTilt3D } from "./useTilt3D.js";
+export type { Tilt3DHandlers } from "./useTilt3D.js";

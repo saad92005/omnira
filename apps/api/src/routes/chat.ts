@@ -46,7 +46,7 @@ export function registerChatRoutes(
 
     await conversationsService.recordTurn(state.id, message, result.reply);
 
-    reply.status(200).send({ conversationId: state.id, reply: result.reply });
+    reply.status(200).send({ conversationId: state.id, reply: result.reply, clientActions: result.clientActions });
   });
 
   // Voice-capable clients check this before offering the mic hotkey (§3.3 — revoked

@@ -87,6 +87,7 @@ describe("ChatAgent", () => {
     );
     expect(execute).toHaveBeenCalledWith({ url: "https://x.com" });
     expect(result.reply).toBe("done: opened");
+    expect(result.clientActions).toEqual([]);
     expect(capturedExecuteTool).toBeDefined();
   });
 
@@ -126,6 +127,29 @@ describe("ChatAgent", () => {
     expect(conversation?.[1]).toMatchObject({ role: "user", content: "hello" });
     // The system prompt itself is never persisted as a ConversationTurn.
     expect(state.turns.map((t) => t.role)).toEqual(["user", "assistant"]);
+  });
+
+  it("surfaces a tool's clientAction in the result, and returns an empty array when no tool requests one", async () => {
+    const provider: ModelProvider = {
+      name: "fake",
+      generateReply: vi.fn(async (_conversation, _onDelta, options) => {
+        const toolResult = await options?.executeTool?.({ id: "call_1", name: "set_timer", arguments: { seconds: 60 } });
+        return { text: toolResult ?? "", model: "fake-model", usage: { inputTokens: 1, outputTokens: 1 } };
+      }),
+    };
+
+    const execute = vi.fn().mockResolvedValue({
+      result: "Timer set for 60 seconds.",
+      clientAction: { type: "set_timer", payload: { seconds: 60 } },
+    });
+    const agent = new ChatAgent(provider, silentLogger(), [
+      { definition: { name: "set_timer", description: "Sets a timer", parameters: {} }, execute },
+    ]);
+    const state = new ConversationState("user-1");
+    const result = await agent.respond(state, "set a timer for 60 seconds");
+
+    expect(result.reply).toBe("Timer set for 60 seconds.");
+    expect(result.clientActions).toEqual([{ type: "set_timer", payload: { seconds: 60 } }]);
   });
 
   it("omits the tools option entirely when no tools are configured (no tool round-trip attempted)", async () => {

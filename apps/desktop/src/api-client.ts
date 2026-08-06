@@ -77,10 +77,15 @@ export async function login(email: string, password: string): Promise<void> {
   setTokens(tokens.accessToken, tokens.refreshToken);
 }
 
+export interface ClientAction {
+  type: string;
+  payload: Record<string, unknown>;
+}
+
 export async function sendChatMessage(
   message: string,
   conversationId?: string,
-): Promise<{ conversationId: string; reply: string }> {
+): Promise<{ conversationId: string; reply: string; clientActions: ClientAction[] }> {
   return request("/chat", { method: "POST", body: JSON.stringify({ message, conversationId }) });
 }
 

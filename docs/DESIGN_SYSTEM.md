@@ -1,15 +1,17 @@
-# Omnira Design System — v1.3 "Aurora HUD"
+# Omnira Design System — v1.4 "Aurora HUD"
 
 Established before any screen is built, per master prompt §14. v0 (Phase 0
 walking skeleton) shipped a minimal functional token set; v1.1 layered a
 real visual identity on top of the same tokens; v1.2 added a 3D depth scale
-(layered shadows, glossy orb shading, hover lift); v1.3 adds an
+(layered shadows, glossy orb shading, hover lift); v1.3 added an
 instrument-panel ("HUD") presentation layer — a grid shell, corner-bracketed
-glass panels, status indicators, and a large segmented-ring voice core — on
-top of all of that, expanding, not replacing, per §14's "one system, not two
-parallel stylesheets." Extend it as Phase 1+ adds real screens (dashboard,
-knowledge graph, marketplace), not by inventing new one-off values per
-screen.
+glass panels, status indicators, and a large segmented-ring voice core; v1.4
+adds genuine 3D transforms on top of v1.2's flat depth cues — true
+perspective/rotateX/rotateY, not box-shadow tricks — on the voice core's
+rings, the HUD panels, and message-bubble entrances. All of this expands,
+never replaces, per §14's "one system, not two parallel stylesheets."
+Extend it as Phase 1+ adds real screens (dashboard, knowledge graph,
+marketplace), not by inventing new one-off values per screen.
 
 Implementation: `packages/ui-kit/src/tokens.css` (CSS custom properties,
 keyframes, and reusable component classes) + `packages/ui-kit/src/tokens.ts`
@@ -173,6 +175,32 @@ screen in the app that needed a responsive breakpoint at all.
 - `.omnira-hud-grid` — a fixed, full-viewport faint line grid behind
   everything (masked to fade toward the edges), the one purely decorative
   addition, layered above `AuroraBackground` and below all HUD panels.
+
+## True 3D (v1.4)
+
+Everything in v1.2's "Elevation / 3D Depth" is flat depth cues (shadows,
+lift). v1.4 adds actual 3D transforms — `perspective` + `rotateX`/`rotateY`,
+things that genuinely tilt a plane in space — in three places:
+
+- **Voice core gyroscope rings** (`MicButton` `size="lg"` only) —
+  `.omnira-orb__ring3d` × 3, each a circle tilted on its own `rotateX`/
+  `rotateY` axis and spinning around it (`omnira-ring3d-spin-a/b/c`),
+  reading as an armillary sphere rather than a flat spinning ring. Speeds
+  up under `thinking`, same state-reactivity contract as every other orb
+  layer.
+- **Cursor-tracked panel tilt** — `useTilt3D()` (`packages/ui-kit/src/useTilt3D.ts`)
+  sets `--tilt-x`/`--tilt-y` from pointer position; `.omnira-tilt-3d`
+  consumes them as `rotateX`/`rotateY` under a `perspective`. Applied to
+  the sidebar and comm-log panels — a HUD panel leaning toward the cursor,
+  not a flat hover shadow. A hook, not a component, so any panel opts in
+  with three props and no wrapper element.
+- **Message bubble entrance** — `.omnira-bubble-in-3d` on the bubble,
+  `perspective` on its row (the parent — perspective has to live outside
+  the transformed element to read as depth, not on it). Bubbles tip in
+  from `rotateX(-55deg)` rather than sliding up flat.
+
+All three respect `prefers-reduced-motion` — frozen to their resting
+transform, same as every other animation in this system (§14).
 
 ## Accessibility Baseline (§14)
 

@@ -4,8 +4,29 @@ import type { ModelProvider, TextDelta, ToolCallRequest, ToolDefinition } from "
 import { ConversationState } from "./conversation-state.js";
 import { recordActivity } from "./activity-log.js";
 
+/**
+ * A follow-up effect a tool wants the *client* to perform (a countdown
+ * timer, a clipboard write) — things the server genuinely cannot do itself:
+ * apps/api may be a stateless serverless function with no way to wait and
+ * fire a notification later, and neither a Lambda nor a persistent server
+ * process has access to the user's actual clipboard. The tool's `execute`
+ * still runs server-side and returns a confirmation string for the model's
+ * context; `clientAction` is carried alongside it, out through ChatTurnResult,
+ * for the frontend to actually perform.
+ */
+export interface ClientAction {
+  type: string;
+  payload: Record<string, unknown>;
+}
+
+export interface ToolExecutionResult {
+  result: string;
+  clientAction: ClientAction;
+}
+
 export interface ChatTurnResult {
   reply: string;
+  clientActions: ClientAction[];
 }
 
 /**
@@ -20,14 +41,19 @@ const SYSTEM_PROMPT = `You are Omnira, a capable personal AI assistant running o
 
 Language: default to English, but if the user writes or speaks in Roman Urdu (Urdu written in Latin script, e.g. "aap kaisay hain") switch fluently to Roman Urdu and keep replying in whichever language they're using. Mirror their language choice turn by turn.
 
-When you use a tool to take a real action (opening an app or URL, creating a file or folder, etc.), confirm what you actually did in one short, natural sentence once it succeeds, e.g. "I have made the file on your Desktop." or its Roman Urdu equivalent — never describe the tool call mechanically. If a tool fails, say so plainly and suggest what to try.
+When you use a tool to take a real action (opening an app or URL, creating a file or folder, setting a timer, copying text, etc.), confirm what you actually did in one short, natural sentence once it succeeds, e.g. "I have made the file on your Desktop." or its Roman Urdu equivalent — never describe the tool call mechanically. If a tool fails, say so plainly and suggest what to try.
 
 Keep replies concise and conversational — they are often read aloud by text-to-speech, not just displayed as text, so avoid markdown formatting, bullet lists, or anything that reads awkwardly out loud.`;
 
-/** A tool the agent can call, paired with the function that actually executes it. */
+/**
+ * A tool the agent can call, paired with the function that actually executes
+ * it. Most tools just return a confirmation string; a tool whose real effect
+ * has to happen in the browser (see ClientAction above) returns the richer
+ * ToolExecutionResult shape instead.
+ */
 export interface ToolHandler {
   definition: ToolDefinition;
-  execute: (args: Record<string, unknown>) => Promise<string>;
+  execute: (args: Record<string, unknown>) => Promise<string | ToolExecutionResult>;
 }
 
 /**
@@ -51,13 +77,14 @@ export class ChatAgent {
   ): Promise<ChatTurnResult> {
     state.addUserTurn(userMessage);
     const startedAt = Date.now();
+    const clientActions: ClientAction[] = [];
 
     try {
       const result = await this.provider.generateReply(
         [{ role: "system", content: SYSTEM_PROMPT }, ...state.toChatMessages()],
         onDelta ?? (() => {}),
         this.tools.length > 0
-          ? { tools: this.tools.map((t) => t.definition), executeTool: (call) => this.executeTool(call) }
+          ? { tools: this.tools.map((t) => t.definition), executeTool: (call) => this.executeTool(call, clientActions) }
           : undefined,
       );
       state.addAssistantTurn(result.text);
@@ -71,7 +98,7 @@ export class ChatAgent {
         durationMs: Date.now() - startedAt,
       });
 
-      return { reply: result.text };
+      return { reply: result.text, clientActions };
     } catch (err) {
       const omniraErr = toOmniraError(err);
       recordActivity(this.logger, {
@@ -85,9 +112,12 @@ export class ChatAgent {
     }
   }
 
-  private async executeTool(call: ToolCallRequest): Promise<string> {
+  private async executeTool(call: ToolCallRequest, clientActions: ClientAction[]): Promise<string> {
     const handler = this.tools.find((t) => t.definition.name === call.name);
     if (!handler) return `Error: no tool named "${call.name}" is available.`;
-    return handler.execute(call.arguments);
+    const outcome = await handler.execute(call.arguments);
+    if (typeof outcome === "string") return outcome;
+    clientActions.push(outcome.clientAction);
+    return outcome.result;
   }
 }

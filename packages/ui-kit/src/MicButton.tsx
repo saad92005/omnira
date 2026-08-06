@@ -51,7 +51,14 @@ export function MicButton({
       onPointerUp={disabled ? undefined : onPressEnd}
       onPointerLeave={disabled ? undefined : onPressEnd}
     >
-      {size === "lg" && <span className="omnira-orb__ticks" aria-hidden="true" />}
+      {size === "lg" && (
+        <>
+          <span className="omnira-orb__ticks" aria-hidden="true" />
+          <span className="omnira-orb__ring3d omnira-orb__ring3d--a" aria-hidden="true" />
+          <span className="omnira-orb__ring3d omnira-orb__ring3d--b" aria-hidden="true" />
+          <span className="omnira-orb__ring3d omnira-orb__ring3d--c" aria-hidden="true" />
+        </>
+      )}
       <span className="omnira-orb__glow" aria-hidden="true" />
       <span className="omnira-orb__ring" aria-hidden="true" />
       <span className="omnira-orb__ring omnira-orb__ring--inner" aria-hidden="true" />

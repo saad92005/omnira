@@ -7,8 +7,8 @@ export interface MessageBubbleProps {
 
 export function MessageBubble({ role, children }: MessageBubbleProps): ReactNode {
   return (
-    <div className={`omnira-bubble-row omnira-bubble-row--${role} omnira-fade-in-up`}>
-      <div className={`omnira-bubble omnira-bubble--${role}`}>{children}</div>
+    <div className={`omnira-bubble-row omnira-bubble-row--${role}`}>
+      <div className={`omnira-bubble omnira-bubble--${role} omnira-bubble-in-3d`}>{children}</div>
     </div>
   );
 }

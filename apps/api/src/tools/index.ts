@@ -14,6 +14,70 @@ const DATETIME_TOOL: ToolHandler = {
   execute: async () => new Date().toString(),
 };
 
+const MAX_TIMER_SECONDS = 24 * 60 * 60;
+
+/**
+ * Always-available, like DATETIME_TOOL — no OS interaction, nothing to gate
+ * behind Capability.SystemControl. The actual waiting and notification
+ * can't happen here: apps/api may be a stateless Netlify Function with no
+ * way to "wait" between requests, so this only validates the request and
+ * hands a clientAction back for the frontend (ChatView.tsx) to actually run.
+ */
+const SET_TIMER_TOOL: ToolHandler = {
+  definition: {
+    name: "set_timer",
+    description: "Set a countdown timer that notifies the user when it finishes.",
+    parameters: {
+      type: "object",
+      properties: {
+        seconds: { type: "number", description: "How many seconds from now the timer should go off (max 86400, i.e. 24 hours)." },
+        label: { type: "string", description: "A short label for what the timer is for, e.g. \"pasta\". Optional." },
+      },
+      required: ["seconds"],
+      additionalProperties: false,
+    },
+  },
+  execute: async (args) => {
+    const seconds = Number(args["seconds"]);
+    const label = String(args["label"] ?? "");
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+      return "Error: seconds must be a positive number.";
+    }
+    if (seconds > MAX_TIMER_SECONDS) {
+      return `Error: timers can be at most ${MAX_TIMER_SECONDS} seconds (24 hours).`;
+    }
+    return {
+      result: `Timer set for ${seconds} second${seconds === 1 ? "" : "s"}${label ? ` (${label})` : ""}.`,
+      clientAction: { type: "set_timer", payload: { seconds, label } },
+    };
+  },
+};
+
+/**
+ * Always-available, same reasoning as SET_TIMER_TOOL — only the frontend
+ * has access to the user's actual clipboard (navigator.clipboard).
+ */
+const COPY_TO_CLIPBOARD_TOOL: ToolHandler = {
+  definition: {
+    name: "copy_to_clipboard",
+    description: "Copy a piece of text to the user's clipboard.",
+    parameters: {
+      type: "object",
+      properties: { text: { type: "string", description: "The exact text to copy." } },
+      required: ["text"],
+      additionalProperties: false,
+    },
+  },
+  execute: async (args) => {
+    const text = String(args["text"] ?? "");
+    if (!text) return "Error: no text provided to copy.";
+    return {
+      result: "Copied to clipboard.",
+      clientAction: { type: "copy_to_clipboard", payload: { text } },
+    };
+  },
+};
+
 const OPEN_URL_TOOL: ToolHandler = {
   definition: {
     name: "open_url",
@@ -98,7 +162,8 @@ const CREATE_FOLDER_TOOL: ToolHandler = {
  * even attempt it. See ADR-0006.
  */
 export function buildToolHandlers(systemControlGranted: boolean): ToolHandler[] {
+  const alwaysAvailable = [DATETIME_TOOL, SET_TIMER_TOOL, COPY_TO_CLIPBOARD_TOOL];
   return systemControlGranted
-    ? [DATETIME_TOOL, OPEN_URL_TOOL, OPEN_APP_TOOL, CREATE_FILE_TOOL, CREATE_FOLDER_TOOL]
-    : [DATETIME_TOOL];
+    ? [...alwaysAvailable, OPEN_URL_TOOL, OPEN_APP_TOOL, CREATE_FILE_TOOL, CREATE_FOLDER_TOOL]
+    : alwaysAvailable;
 }

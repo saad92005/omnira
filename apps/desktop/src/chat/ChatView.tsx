@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Button, MessageBubble, MicButton, TypingIndicator, VoiceState } from "@omnira/ui-kit";
+import { Button, MessageBubble, MicButton, TypingIndicator, VoiceState, useTilt3D } from "@omnira/ui-kit";
 import {
   ApiError,
   getActiveCapabilities,
@@ -10,6 +10,7 @@ import {
   transcribeAudio,
   type ConversationSummary,
 } from "../api-client.js";
+import { runClientAction } from "../client-actions.js";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder.js";
 import { speak } from "../speech.js";
 import { ConversationSidebar } from "./ConversationSidebar.js";
@@ -47,6 +48,7 @@ export function ChatView(): ReactNode {
   const recorder = useVoiceRecorder();
   const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const commLogTilt = useTilt3D<HTMLDivElement>(3);
 
   const refreshConversations = useCallback(() => {
     listConversations()
@@ -76,6 +78,33 @@ export function ChatView(): ReactNode {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, sending]);
 
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent): void {
+      const target = event.target;
+      const isTypingContext = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+
+      // "/" jumps focus to the message input from anywhere on the page —
+      // never intercepted while already typing, so it can still be typed
+      // as a literal character in the message itself.
+      if (event.key === "/" && !isTypingContext && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        inputRef.current?.focus();
+        return;
+      }
+
+      // Ctrl/Cmd+Shift+K for a new chat — avoids Ctrl+N and Ctrl+K, both of
+      // which browsers reserve (new window / address bar) and won't let a
+      // page's preventDefault override.
+      const mod = event.metaKey || event.ctrlKey;
+      if (mod && event.shiftKey && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        handleNewChat();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   function toggleVoiceMode(): void {
     setVoiceMode((prev) => {
       const next = !prev;
@@ -96,6 +125,7 @@ export function ChatView(): ReactNode {
         setConversationId(result.conversationId);
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", text: result.reply }]);
         refreshConversations();
+        result.clientActions.forEach((action) => void runClientAction(action));
         return result.reply;
       } catch (err) {
         setError(err instanceof ApiError ? err.message : "Could not reach Omnira. Check your connection.");
@@ -126,6 +156,18 @@ export function ChatView(): ReactNode {
     event.preventDefault();
     const reply = await send(input);
     if (reply && voiceMode) await speakReply(reply);
+  }
+
+  function handleExportConversation(): void {
+    if (messages.length === 0) return;
+    const body = messages.map((m) => `**${m.role === "user" ? "You" : "Omnira"}:** ${m.text}`).join("\n\n");
+    const blob = new Blob([`# Omnira conversation\n\n${body}\n`], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `omnira-conversation-${new Date().toISOString().slice(0, 10)}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   function handleNewChat(): void {
@@ -251,10 +293,29 @@ export function ChatView(): ReactNode {
         )}
       </div>
 
-      <div className="omnira-hud-commlog omnira-glass omnira-hud-panel" style={commLogStyle}>
-        <p className="omnira-hud-label" style={{ margin: 0 }}>
-          Comm log
-        </p>
+      <div
+        ref={commLogTilt.ref}
+        onPointerMove={commLogTilt.onPointerMove}
+        onPointerLeave={commLogTilt.onPointerLeave}
+        className="omnira-hud-commlog omnira-glass omnira-hud-panel omnira-tilt-3d"
+        style={commLogStyle}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <p className="omnira-hud-label" style={{ margin: 0 }}>
+            Comm log
+          </p>
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={handleExportConversation}
+              className="omnira-hud-label"
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--omnira-accent-2)" }}
+              title="Download this conversation as a Markdown file"
+            >
+              Export ⬇
+            </button>
+          )}
+        </div>
         {messages.length === 0 && !sending && (
           <p style={{ color: "var(--omnira-text-secondary)", fontSize: "var(--omnira-text-sm)" }}>
             Say hello, or hold the core to talk.
@@ -274,7 +335,8 @@ export function ChatView(): ReactNode {
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Message Omnira…"
+          placeholder="Message Omnira… (press / to focus)"
+          title="Press / from anywhere to focus this field"
           disabled={sending}
           autoFocus
           className="omnira-input"

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button } from "@omnira/ui-kit";
+import { Button, useTilt3D } from "@omnira/ui-kit";
 import type { ConversationSummary } from "../api-client.js";
 
 export interface ConversationSidebarProps {
@@ -15,9 +15,14 @@ export function ConversationSidebar({
   onSelect,
   onNewChat,
 }: ConversationSidebarProps): ReactNode {
+  const tilt = useTilt3D<HTMLElement>(3);
+
   return (
     <aside
-      className="omnira-glass omnira-hud-panel"
+      ref={tilt.ref}
+      onPointerMove={tilt.onPointerMove}
+      onPointerLeave={tilt.onPointerLeave}
+      className="omnira-glass omnira-hud-panel omnira-tilt-3d"
       style={{
         height: "100%",
         boxSizing: "border-box",
@@ -31,7 +36,7 @@ export function ConversationSidebar({
       <p className="omnira-hud-label" style={{ margin: "0 0 var(--omnira-space-1)" }}>
         Conversations
       </p>
-      <Button variant="primary" onClick={onNewChat} fullWidth>
+      <Button variant="primary" onClick={onNewChat} fullWidth title="New chat (Ctrl/Cmd+Shift+K)">
         + New chat
       </Button>
 

@@ -17,7 +17,15 @@ screen, expanded system control (`create_file`/`create_folder`, ADR-0007),
 a real system prompt (persona, spoken-confirmation style, Roman Urdu
 support), a persisted voice-mode toggle that closes the speak → act → hear
 loop, and a PWA manifest/service worker so the web build is installable on
-mobile. All seven sub-phases from
+mobile; "Phase 10" — **actually deployed publicly**, not just PWA-ready:
+`apps/api` now also runs as Netlify Functions (a genuinely difficult port —
+see `apps/api/src/db.ts` and `netlify.toml` for the Prisma/serverless
+bundling fixes, verified by running Netlify's real build pipeline locally
+before ever deploying), live at a real HTTPS URL serving both the API and
+the web build from one site, plus true 3D transforms (v1.4, not just depth
+cues) and three new tools (`set_timer`, `copy_to_clipboard`, conversation
+export) via a new "client action" pattern (ADR-0008) for effects only the
+browser can perform. All seven sub-phases from
 [`docs/features/phase-0-foundation.md`](features/phase-0-foundation.md) have
 working code, the full regression suite (`pnpm build && pnpm lint &&
 pnpm typecheck && pnpm test`) is green, and the whole walking skeleton has
@@ -136,6 +144,11 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
   — `create_file`/`create_folder` (same allowlist discipline), the first
   real system prompt (spoken-style confirmations, Roman Urdu), and the
   persisted voice-mode toggle that closes the speak→act→hear loop.
+- [ADR-0008: Client Actions for Tools](adr/0008-client-actions-for-tools.md)
+  — `set_timer`/`copy_to_clipboard` return a `clientAction` instead of a
+  plain string; the server validates and describes the effect, the browser
+  (the only place that can hold a timer across requests or touch the
+  clipboard) actually performs it.
 - **Hosted Postgres over local Docker** — not yet its own ADR (should be
   written up if this becomes the permanent path rather than a one-off
   workaround for this machine's disabled virtualization); decision and

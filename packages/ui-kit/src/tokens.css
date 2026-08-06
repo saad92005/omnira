@@ -227,6 +227,18 @@
   animation: omnira-fade-in-up 320ms ease-out both;
 }
 
+/* 3D entrance for chat messages — a real perspective flip (rotateX) on the
+   bubble itself, not a flat translate. `.omnira-bubble-row`'s `perspective`
+   (below, with the rest of the message-bubble rules) is what makes the
+   rotation read as the bubble tipping toward the viewer, not a flat move. */
+.omnira-bubble-in-3d {
+  animation: omnira-bubble-in-3d 420ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes omnira-bubble-in-3d {
+  from { opacity: 0; transform: rotateX(-55deg) translateY(14px) scale(0.94); }
+  to   { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); }
+}
+
 .omnira-gradient-text {
   background: linear-gradient(
     120deg,
@@ -371,12 +383,70 @@
 .omnira-orb[data-size="lg"] {
   width: 220px;
   height: 220px;
+  perspective: 900px;
+  transform-style: preserve-3d;
 }
 .omnira-orb[data-size="lg"] .omnira-orb__core {
   inset: 34px;
 }
 .omnira-orb[data-size="lg"] .omnira-orb__ring--inner {
   inset: 14px;
+}
+
+/* Genuine 3D rings (rotateX/rotateY tilt the ring's own plane in space, not
+   just a 2D spin) — three rings on different tilted axes read as an
+   armillary-sphere/gyroscope, the one place this UI leans fully into "3D"
+   rather than flat depth cues. */
+.omnira-orb__ring3d {
+  position: absolute;
+  inset: -30px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  transform-style: preserve-3d;
+  opacity: 0.5;
+  transition: opacity var(--omnira-transition-state);
+}
+.omnira-orb__ring3d--a {
+  border-top-color: var(--omnira-accent-2);
+  border-bottom-color: var(--omnira-accent-2);
+  animation: omnira-ring3d-spin-a 9s linear infinite;
+}
+.omnira-orb__ring3d--b {
+  inset: -44px;
+  border-top-color: var(--omnira-accent);
+  border-bottom-color: var(--omnira-accent);
+  animation: omnira-ring3d-spin-b 12s linear infinite;
+}
+.omnira-orb__ring3d--c {
+  inset: -16px;
+  border-top-color: var(--omnira-accent-3);
+  border-bottom-color: var(--omnira-accent-3);
+  animation: omnira-ring3d-spin-c 6.5s linear infinite;
+}
+@keyframes omnira-ring3d-spin-a {
+  from { transform: rotateX(72deg) rotateZ(0deg); }
+  to   { transform: rotateX(72deg) rotateZ(360deg); }
+}
+@keyframes omnira-ring3d-spin-b {
+  from { transform: rotateX(72deg) rotateY(58deg) rotateZ(0deg); }
+  to   { transform: rotateX(72deg) rotateY(58deg) rotateZ(360deg); }
+}
+@keyframes omnira-ring3d-spin-c {
+  from { transform: rotateX(72deg) rotateY(-58deg) rotateZ(0deg); }
+  to   { transform: rotateX(72deg) rotateY(-58deg) rotateZ(360deg); }
+}
+.omnira-orb[data-state="listening"] .omnira-orb__ring3d,
+.omnira-orb[data-state="thinking"] .omnira-orb__ring3d,
+.omnira-orb[data-state="speaking"] .omnira-orb__ring3d {
+  opacity: 0.95;
+}
+.omnira-orb[data-state="thinking"] .omnira-orb__ring3d--a { animation-duration: 3.5s; }
+.omnira-orb[data-state="thinking"] .omnira-orb__ring3d--b { animation-duration: 4.5s; }
+.omnira-orb[data-state="thinking"] .omnira-orb__ring3d--c { animation-duration: 2.5s; }
+.omnira-orb[data-disabled="true"] .omnira-orb__ring3d {
+  animation-play-state: paused;
+  opacity: 0.1;
+  filter: grayscale(1);
 }
 
 .omnira-orb__ticks {
@@ -476,6 +546,9 @@
 /* Message bubbles */
 .omnira-bubble-row {
   display: flex;
+  /* Perspective lives on the row (the entrance-animated bubble's parent) so
+     the bubble's rotateX reads as tipping toward the viewer, not a flat 2D move. */
+  perspective: 700px;
 }
 .omnira-bubble-row--user { justify-content: flex-end; }
 .omnira-bubble-row--assistant { justify-content: flex-start; }
@@ -544,6 +617,18 @@
   -webkit-backdrop-filter: blur(var(--omnira-glass-blur));
   box-shadow: var(--omnira-shadow-2), var(--omnira-inset-highlight);
   border-radius: var(--omnira-radius-sm);
+}
+
+/* Cursor-tracked 3D tilt — --tilt-x/--tilt-y are set by the useTilt3D hook
+   from pointer position; the panel leans toward the cursor in real 3D
+   (perspective + rotateX/rotateY), not a flat hover shadow trick. */
+.omnira-tilt-3d {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  transform: perspective(1200px) rotateX(var(--tilt-y)) rotateY(var(--tilt-x));
+  transition: transform 200ms ease-out;
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 /* Corner-bracket framing — the one deliberately literal "instrument panel" cue. */
@@ -707,13 +792,19 @@
   .omnira-aurora-bg::after,
   .omnira-aurora-bg__accent,
   .omnira-fade-in-up,
+  .omnira-bubble-in-3d,
   .omnira-typing__dot,
   .omnira-orb__ring,
   .omnira-orb__ring--inner,
   .omnira-orb__glow,
   .omnira-orb__ticks,
+  .omnira-orb__ring3d,
   .omnira-orb[data-state="listening"],
   .omnira-hud-radar {
     animation: none !important;
+  }
+  .omnira-tilt-3d {
+    transform: none !important;
+    transition: none !important;
   }
 }
