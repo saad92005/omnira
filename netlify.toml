@@ -1,0 +1,15 @@
+# Netlify hosts the web build of apps/desktop — the same React app, usable
+# in any browser, installable to a phone home screen via the PWA manifest
+# in apps/desktop/public/. VITE_API_BASE_URL is set in Netlify's dashboard
+# (Site settings -> Environment variables), not here, since it depends on
+# whatever URL Railway assigns the API service at deploy time.
+[build]
+  command = "pnpm install --frozen-lockfile && pnpm --filter @omnira/ui-kit build && pnpm --filter @omnira/desktop build"
+  publish = "apps/desktop/dist"
+
+# Single-page app: any path that isn't a real static file falls back to
+# index.html so client-side routing works on a hard refresh/deep link.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

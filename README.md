@@ -143,30 +143,40 @@ polish, not required for it to work on a phone.
 `open_app`/`open_url`/`create_file`/`create_folder` tools (ADR-0006/0007)
 act on whatever machine `apps/api` runs on. That's meaningful when it's
 your own PC; it would be actively wrong on a cloud server acting on a
-request from your phone (there's no "your Desktop" on a Render container).
-`render.yaml` sets `SYSTEM_CONTROL_AVAILABLE=false` for exactly this
-reason — chat, conversation history, and voice all work the same either
-way, only the automation actions are local-only.
+request from your phone (there's no "your Desktop" on a cloud container).
+`SYSTEM_CONTROL_AVAILABLE=false` on the hosted deployment enforces this —
+chat, conversation history, and voice all work the same either way, only
+the automation actions are local-only.
 
-Deployment target: [Render](https://render.com) (free web-service tier,
-generally no card required for hobby use; free tier sleeps after 15 minutes
-idle — the first request after a nap takes ~30-50s to wake up). `render.yaml`
-at the repo root is a ready-to-use Render Blueprint covering both services.
+Deployment target: **Railway** (API) + **Netlify** (web build) — both
+genuinely card-free for this use. (`render.yaml` is also in the repo as an
+alternative if Render doesn't ask your account for a card — it did for this
+project's own account, which is why Railway/Netlify is the primary path
+here.) Railway's free trial credit is a small monthly allowance, fine for
+personal/light-traffic use, not a guarantee of 24/7 uptime the way a paid
+tier would be.
 
-1. Push this repo to GitHub (Render deploys from a connected repo — there's
-   no card-free way to deploy without one).
-2. On [render.com](https://render.com): **New → Blueprint**, select the
-   repo. Render reads `render.yaml` and proposes both services
-   (`omnira-api`, `omnira-web`).
-3. Before the first deploy finishes, fill in `omnira-api`'s secrets in its
-   dashboard's Environment tab — same values as your local `apps/api/.env`:
-   `DATABASE_URL` (the same Neon connection string works — sharing it means
-   the same accounts/conversations are reachable from both the desktop app
-   and the phone), `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `GROQ_API_KEY`,
-   and `PUBLIC_WEB_ORIGIN` set to `https://omnira-web.onrender.com` (Render
-   URLs are `https://<service name>.onrender.com` — predictable from the
-   `name:` in `render.yaml`, so this can be filled in immediately, no need
-   to wait for `omnira-web`'s first deploy).
-4. Once both services are live, `https://omnira-web.onrender.com` is the
-   URL to open on a phone (or any device) — from Chrome/Safari, "Add to
-   Home Screen" installs it like a native app via the PWA manifest.
+1. **API on Railway**: [railway.app](https://railway.app) → sign up with
+   GitHub → **New Project → Deploy from GitHub repo** → select `omnira`.
+   Railway reads `railway.json` (build/start commands are already set — no
+   need to configure them by hand). Add environment variables (same values
+   as your local `apps/api/.env`): `NODE_ENV=production`,
+   `SYSTEM_CONTROL_AVAILABLE=false`, `DATABASE_URL`, `JWT_ACCESS_SECRET`,
+   `JWT_REFRESH_SECRET`, `GROQ_API_KEY`. Once it deploys, go to
+   **Settings → Networking → Generate Domain** to get a public URL like
+   `https://omnira-api-production-xxxx.up.railway.app` — copy it, you'll
+   need it next.
+2. **Web app on Netlify**: [netlify.com](https://netlify.com) → sign up with
+   GitHub → **Add new site → Import an existing project** → select `omnira`.
+   Netlify reads `netlify.toml` for the build command and publish directory.
+   In **Site settings → Environment variables**, add `VITE_API_BASE_URL` set
+   to `<your Railway URL>/v1` (from step 1). Deploy — Netlify gives you a
+   URL like `https://omnira.netlify.app` (or pick a custom subdomain in
+   Site settings → Domain management).
+3. **Close the loop**: back on Railway, add one more environment variable to
+   the API service: `PUBLIC_WEB_ORIGIN` set to your Netlify URL from step 2
+   (e.g. `https://omnira.netlify.app`) — this is what lets the deployed web
+   app's browser origin pass CORS. Railway redeploys automatically when you
+   save an environment variable.
+4. Once both are live, open the Netlify URL on a phone — from Chrome/Safari,
+   "Add to Home Screen" installs it like a native app via the PWA manifest.
