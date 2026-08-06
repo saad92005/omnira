@@ -1,0 +1,59 @@
+// Prisma schema for apps/api. ADR-0002: Prisma is the query layer for Postgres.
+// Phase 0 scope only: user accounts, refresh-token rotation, and the
+// capability permission model (currently exercising only `microphone`,
+// see packages/core/src/permissions.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  refreshTokens    RefreshToken[]
+  permissionGrants PermissionGrant[]
+
+  @@map("users")
+}
+
+/// One row per issued refresh token. Rotation: redeeming a token creates a
+/// new one and sets `replacedByTokenId`, satisfying the "refresh rotation"
+/// requirement in master prompt §13. A token is valid only if `revokedAt`
+/// is null and `expiresAt` is in the future.
+model RefreshToken {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 hash of the token — the raw token is never stored.
+  tokenHash         String    @unique
+  createdAt         DateTime  @default(now())
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  replacedByTokenId String?
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+/// A capability grant is a fact recorded, never deleted (master prompt §13 —
+/// immutable, exportable audit trail). Revocation sets `revokedAt`; it does
+/// not remove the row.
+model PermissionGrant {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  capability String
+  grantedAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([userId, capability])
+  @@map("permission_grants")
+}

@@ -1,0 +1,75 @@
+/* Design tokens — mirrors /docs/DESIGN_SYSTEM.md. Keep the two in sync. */
+
+:root,
+:root[data-theme="light"] {
+  --omnira-bg: #fafafa;
+  --omnira-surface: #ffffff;
+  --omnira-surface-raised: #ffffff;
+  --omnira-border: #e2e2e2;
+  --omnira-text-primary: #18181b;
+  --omnira-text-secondary: #71717a;
+  --omnira-accent: #5b5bd6;
+  --omnira-accent-contrast: #ffffff;
+  --omnira-danger: #dc2626;
+  --omnira-success: #16a34a;
+  --omnira-warning: #d97706;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --omnira-bg: #121212;
+    --omnira-surface: #1e1e1e;
+    --omnira-surface-raised: #262626;
+    --omnira-border: #333333;
+    --omnira-text-primary: #f4f4f5;
+    --omnira-text-secondary: #a1a1aa;
+    --omnira-accent: #8080f0;
+    --omnira-accent-contrast: #0b0b10;
+    --omnira-danger: #f87171;
+    --omnira-success: #4ade80;
+    --omnira-warning: #fbbf24;
+  }
+}
+
+:root[data-theme="dark"] {
+  --omnira-bg: #121212;
+  --omnira-surface: #1e1e1e;
+  --omnira-surface-raised: #262626;
+  --omnira-border: #333333;
+  --omnira-text-primary: #f4f4f5;
+  --omnira-text-secondary: #a1a1aa;
+  --omnira-accent: #8080f0;
+  --omnira-accent-contrast: #0b0b10;
+  --omnira-danger: #f87171;
+  --omnira-success: #4ade80;
+  --omnira-warning: #fbbf24;
+}
+
+:root {
+  --omnira-font-sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --omnira-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --omnira-text-xs: 12px;
+  --omnira-text-sm: 14px;
+  --omnira-text-base: 15px;
+  --omnira-text-lg: 18px;
+  --omnira-text-xl: 24px;
+
+  --omnira-space-1: 4px;
+  --omnira-space-2: 8px;
+  --omnira-space-3: 12px;
+  --omnira-space-4: 16px;
+  --omnira-space-6: 24px;
+  --omnira-space-8: 32px;
+  --omnira-space-12: 48px;
+
+  --omnira-transition-fast: 150ms ease-out;
+  --omnira-transition-state: 200ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --omnira-transition-fast: 0ms;
+    --omnira-transition-state: 0ms;
+  }
+}
