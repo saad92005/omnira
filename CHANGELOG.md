@@ -40,3 +40,21 @@ All notable changes to this project will be documented in this file. Format foll
   entirely client-side to the browser's native `speechSynthesis` (no vendor
   at all). Supersedes ADR-0003 and ADR-0004, whose original reasoning is
   preserved in place with a status update, not rewritten.
+- **Phase 0 verified live, end to end.** Installed Rust + MSVC Build Tools;
+  `cargo build` produced a real linked `omnira-desktop.exe`, and `tauri dev`
+  launched it as an actual window (confirmed via screenshot: onboarding/
+  sign-in screen rendering correctly). Local Docker Postgres couldn't start
+  in this environment (virtualization disabled in firmware — Docker Desktop
+  fails outright, not a first-run-dialog issue); switched to a free-tier
+  hosted Postgres (Neon) instead, migrated the schema, and ran a full
+  `curl`-driven smoke test against the live server: register → login →
+  real Groq chat reply → permission grant/revoke correctly flips
+  `voice-available` → refresh-token rotation confirmed (reused token
+  correctly rejected).
+
+### Fixed
+
+- `apps/desktop`: network-level `fetch()` failures (server unreachable) were
+  surfacing the raw browser error ("Failed to fetch") instead of a friendly
+  message — found by running the app against a stopped backend. Centralized
+  the fix in `api-client.ts`'s `request()` so every call site gets it.

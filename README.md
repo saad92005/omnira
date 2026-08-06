@@ -7,8 +7,9 @@ status.
 
 ## Phase 0 quickstart
 
-Prerequisites: Node.js ≥20, [pnpm](https://pnpm.io), Docker (for local
-Postgres), and — only if you want to build/run the desktop shell — a
+Prerequisites: Node.js ≥20, [pnpm](https://pnpm.io), a Postgres database
+(either Docker locally, or a free hosted one — see below), and — only if you
+want to build/run the desktop shell — a
 [Rust toolchain](https://v2.tauri.app/start/prerequisites/).
 
 ```sh
@@ -25,6 +26,15 @@ pnpm --filter @omnira/api dev            # http://localhost:4000
 # 3. Desktop app (separate terminal)
 pnpm --filter @omnira/desktop tauri dev
 ```
+
+**If `docker compose up` fails with "Virtualization support not detected"**
+(common in VMs or on machines with virtualization disabled in
+BIOS/UEFI — Docker Desktop cannot start at all in that case), skip Docker
+entirely: sign up free at [console.neon.tech](https://console.neon.tech)
+(no card), copy the connection string it gives you, and paste it as
+`DATABASE_URL` in `apps/api/.env` instead of the local one. Everything else
+is unchanged. This is exactly what got Phase 0 verified end-to-end in this
+project's own build — see `docs/PROJECT_INDEX.md` Known Issues #1.
 
 ### Required secrets (`apps/api/.env`)
 
