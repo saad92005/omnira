@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyInstance } from "fastify";
+import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { type AppConfig, type Logger, toOmniraError, withCorrelationId } from "@omnira/core";
 import type { PrismaClient } from "../db.js";
@@ -23,8 +24,32 @@ declare module "fastify" {
   }
 }
 
+/**
+ * The desktop webview is a browser and enforces CORS like any other — a
+ * missing Access-Control-Allow-Origin header doesn't surface as an HTTP
+ * error, it fails the fetch() call itself before any response is readable.
+ * Scoped to local origins only: the Vite dev server (any port, since it
+ * auto-increments if 1420 is taken) and Tauri's packaged-app origin on
+ * Windows/Linux. Tighten this to an explicit allowlist once Phase 5 adds
+ * real hosted deployments — "any localhost port" is fine for a
+ * single-machine desktop app talking to its own local API, not for a
+ * public-facing one.
+ */
+const ALLOWED_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|tauri\.localhost)(:\d+)?$/;
+
 export function buildServer(deps: AppDependencies): FastifyInstance {
   const app = Fastify({ logger: false });
+
+  app.register(cors, {
+    origin: (origin, cb) => {
+      // No Origin header at all (curl, server-to-server, same-origin) — allow.
+      if (!origin || ALLOWED_ORIGIN.test(origin)) {
+        cb(null, true);
+        return;
+      }
+      cb(new Error("Origin not allowed"), false);
+    },
+  });
 
   app.addHook("onRequest", (request, _reply, done) => {
     const correlationId = (request.headers["x-request-id"] as string | undefined) ?? randomUUID();

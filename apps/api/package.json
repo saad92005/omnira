@@ -15,6 +15,7 @@
     "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
+    "@fastify/cors": "catalog:",
     "@fastify/multipart": "catalog:",
     "@omnira/agents": "workspace:*",
     "@omnira/core": "workspace:*",
