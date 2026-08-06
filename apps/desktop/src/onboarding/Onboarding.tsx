@@ -39,46 +39,55 @@ export function Onboarding({ onComplete }: OnboardingProps): ReactNode {
     <div
       style={{
         display: "flex",
-        flexDirection: "column",
-        gap: "var(--omnira-space-4)",
-        maxWidth: 420,
-        margin: "var(--omnira-space-12) auto",
-        padding: "var(--omnira-space-6)",
-        background: "var(--omnira-surface)",
-        border: "1px solid var(--omnira-border)",
-        borderRadius: 12,
-        fontFamily: "var(--omnira-font-sans)",
-        color: "var(--omnira-text-primary)",
+        minHeight: "100vh",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "var(--omnira-space-4)",
       }}
     >
-      <h1 style={{ fontSize: "var(--omnira-text-xl)", margin: 0 }}>Welcome to Omnira</h1>
-      <p style={{ fontSize: "var(--omnira-text-base)", color: "var(--omnira-text-secondary)", margin: 0 }}>
-        Before you start, decide whether Omnira can use your microphone. You can change this at any
-        time in settings.
-      </p>
       <div
+        className="omnira-glass omnira-card omnira-fade-in-up"
         style={{
-          padding: "var(--omnira-space-3)",
-          border: "1px solid var(--omnira-border)",
-          borderRadius: 8,
-          fontSize: "var(--omnira-text-sm)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--omnira-space-4)",
+          width: "100%",
+          maxWidth: 440,
+          fontFamily: "var(--omnira-font-sans)",
+          color: "var(--omnira-text-primary)",
         }}
       >
-        <strong>Microphone</strong>
-        <p style={{ margin: "var(--omnira-space-1) 0 0" }}>{MICROPHONE_DESCRIPTION}</p>
-      </div>
-      {error && (
-        <p role="alert" style={{ color: "var(--omnira-danger)", fontSize: "var(--omnira-text-sm)", margin: 0 }}>
-          {error}
+        <h1 className="omnira-gradient-text" style={{ fontSize: "var(--omnira-text-xl)", margin: 0, fontWeight: 700 }}>
+          Welcome to Omnira
+        </h1>
+        <p style={{ fontSize: "var(--omnira-text-base)", color: "var(--omnira-text-secondary)", margin: 0 }}>
+          Before you start, decide whether Omnira can use your microphone. You can change this at any
+          time in settings.
         </p>
-      )}
-      <div style={{ display: "flex", gap: "var(--omnira-space-2)", justifyContent: "flex-end" }}>
-        <Button variant="secondary" onClick={onComplete} disabled={busy}>
-          Not now
-        </Button>
-        <Button variant="primary" onClick={handleGrant} disabled={busy}>
-          Allow microphone
-        </Button>
+        <div
+          style={{
+            padding: "var(--omnira-space-3)",
+            border: "1px solid var(--omnira-glass-border)",
+            borderRadius: "var(--omnira-radius-sm)",
+            fontSize: "var(--omnira-text-sm)",
+          }}
+        >
+          <strong>Microphone</strong>
+          <p style={{ margin: "var(--omnira-space-1) 0 0" }}>{MICROPHONE_DESCRIPTION}</p>
+        </div>
+        {error && (
+          <p role="alert" style={{ color: "var(--omnira-danger)", fontSize: "var(--omnira-text-sm)", margin: 0 }}>
+            {error}
+          </p>
+        )}
+        <div style={{ display: "flex", gap: "var(--omnira-space-2)", justifyContent: "flex-end" }}>
+          <Button variant="secondary" onClick={onComplete} disabled={busy}>
+            Not now
+          </Button>
+          <Button variant="primary" onClick={handleGrant} disabled={busy}>
+            Allow microphone
+          </Button>
+        </div>
       </div>
     </div>
   );
