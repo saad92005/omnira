@@ -1,9 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { Capability, ForbiddenError, UpstreamError, ValidationError, type AppConfig, type Logger } from "@omnira/core";
-import { ChatAgent, ConversationState } from "@omnira/agents";
+import { Capability, UpstreamError, ValidationError, type AppConfig, type Logger } from "@omnira/core";
+import { ChatAgent } from "@omnira/agents";
 import { GroqProvider } from "@omnira/orchestrator";
 import type { PermissionsService } from "../permissions/service.js";
+import type { ConversationsService } from "../conversations/service.js";
+import { buildToolHandlers } from "../tools/index.js";
 import { requireAuth } from "../http/authenticate.js";
 
 const chatRequestSchema = z.object({
@@ -11,19 +13,12 @@ const chatRequestSchema = z.object({
   message: z.string().min(1).max(8000),
 });
 
-/**
- * Phase 0 conversation store is in-memory, scoped to this process — there is
- * no `conversations` table yet (that's Phase 1+ persistence work). A process
- * restart loses in-flight conversations; acceptable for the Phase 0 walking
- * skeleton, called out in PROJECT_INDEX.md as a known limitation.
- */
-const conversations = new Map<string, ConversationState>();
-
 export function registerChatRoutes(
   app: FastifyInstance,
   config: AppConfig,
   logger: Logger,
   permissionsService: PermissionsService,
+  conversationsService: ConversationsService,
 ): void {
   const auth = requireAuth(config.JWT_ACCESS_SECRET);
 
@@ -34,25 +29,18 @@ export function registerChatRoutes(
     const userId = request.userId as string;
     const { conversationId, message } = parsed.data;
 
-    let state = conversationId ? conversations.get(conversationId) : undefined;
-    if (conversationId && !state) {
-      throw new ValidationError("Unknown conversationId");
-    }
-    if (!state) {
-      state = new ConversationState(userId);
-      conversations.set(state.id, state);
-    }
-    if (state.userId !== userId) {
-      throw new ForbiddenError("This conversation belongs to a different user");
-    }
+    const state = await conversationsService.loadOrCreate(userId, conversationId);
 
     if (!config.GROQ_API_KEY) {
       throw new UpstreamError("Chat is unavailable: GROQ_API_KEY is not configured on this server.");
     }
 
+    const systemControlGranted = await permissionsService.isActive(userId, Capability.SystemControl);
     const provider = new GroqProvider({ apiKey: config.GROQ_API_KEY });
-    const agent = new ChatAgent(provider, logger);
+    const agent = new ChatAgent(provider, logger, buildToolHandlers(systemControlGranted));
     const result = await agent.respond(state, message);
+
+    await conversationsService.recordTurn(state.id, message, result.reply);
 
     reply.status(200).send({ conversationId: state.id, reply: result.reply });
   });
@@ -62,5 +50,18 @@ export function registerChatRoutes(
   app.get("/chat/voice-available", { preHandler: auth }, async (request) => {
     const granted = await permissionsService.isActive(request.userId as string, Capability.Microphone);
     return { voiceAvailable: granted };
+  });
+
+  app.get("/conversations", { preHandler: auth }, async (request) => {
+    const conversations = await conversationsService.listForUser(request.userId as string);
+    return { conversations };
+  });
+
+  app.get("/conversations/:id/messages", { preHandler: auth }, async (request) => {
+    const params = z.object({ id: z.string().uuid() }).safeParse(request.params);
+    if (!params.success) throw new ValidationError("Invalid conversation id");
+
+    const messages = await conversationsService.getMessages(request.userId as string, params.data.id);
+    return { messages };
   });
 }

@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, clearTokens, getAccessToken, login, setTokens } from "./api-client.js";
+import {
+  ApiError,
+  clearTokens,
+  getAccessToken,
+  getConversationMessages,
+  listConversations,
+  login,
+  setTokens,
+} from "./api-client.js";
 
 const originalFetch = global.fetch;
 
@@ -59,5 +67,35 @@ describe("login", () => {
       code: "NETWORK_ERROR",
       message: expect.not.stringContaining("Failed to fetch"),
     });
+  });
+});
+
+describe("conversations", () => {
+  it("lists conversations from the unwrapped response envelope", async () => {
+    setTokens("access-1", "refresh-1");
+    global.fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ conversations: [{ id: "c1", title: "Hello", updatedAt: "2026-01-01T00:00:00Z" }] }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    ) as never;
+
+    const conversations = await listConversations();
+    expect(conversations).toEqual([{ id: "c1", title: "Hello", updatedAt: "2026-01-01T00:00:00Z" }]);
+  });
+
+  it("fetches messages for a conversation from the unwrapped response envelope", async () => {
+    setTokens("access-1", "refresh-1");
+    global.fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ messages: [{ role: "user", content: "hi" }] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    ) as never;
+
+    const messages = await getConversationMessages("c1");
+    expect(messages).toEqual([{ role: "user", content: "hi" }]);
   });
 });

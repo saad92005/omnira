@@ -101,6 +101,14 @@
   --omnira-transition-state: 200ms ease-in-out;
   --omnira-radius: 16px;
   --omnira-radius-sm: 10px;
+
+  /* Layered elevation shadows — depth cues for the 3D/"futuristic" surface
+     language (§ glass panels, orb, bubbles, buttons all pull from these
+     instead of hand-rolled box-shadows, so the depth scale stays coherent). */
+  --omnira-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px -6px rgba(0, 0, 0, 0.45);
+  --omnira-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 18px 40px -12px rgba(0, 0, 0, 0.55);
+  --omnira-shadow-3: 0 4px 12px rgba(0, 0, 0, 0.4), 0 32px 64px -16px rgba(0, 0, 0, 0.6);
+  --omnira-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -212,6 +220,7 @@
   border-radius: var(--omnira-radius);
   backdrop-filter: blur(var(--omnira-glass-blur));
   -webkit-backdrop-filter: blur(var(--omnira-glass-blur));
+  box-shadow: var(--omnira-shadow-2), var(--omnira-inset-highlight);
 }
 
 .omnira-fade-in-up {
@@ -227,6 +236,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--omnira-accent) 45%, transparent));
 }
 
 /* Typing / thinking indicator */
@@ -262,7 +272,11 @@
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.4));
+  transition: transform var(--omnira-transition-fast);
 }
+.omnira-orb:hover:not([data-disabled="true"]) { transform: scale(1.05); }
+.omnira-orb:active:not([data-disabled="true"]) { transform: scale(0.96); }
 
 .omnira-orb__ring {
   position: absolute;
@@ -292,8 +306,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--omnira-bg);
+  /* Glossy-sphere shading: a top-left highlight fading into the base color
+     gives the flat circle the appearance of a lit 3D ball. */
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.22), transparent 45%),
+    var(--omnira-bg);
   color: var(--omnira-text-primary);
+  box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.08);
   transition: color var(--omnira-transition-state);
 }
 
@@ -357,13 +376,15 @@
   border-radius: var(--omnira-radius-sm);
   cursor: pointer;
   border: 1px solid transparent;
+  box-shadow: var(--omnira-shadow-1);
   transition:
     transform 120ms ease-out,
     box-shadow var(--omnira-transition-fast),
     background var(--omnira-transition-fast),
     opacity var(--omnira-transition-fast);
 }
-.omnira-btn:active:not(:disabled) { transform: scale(0.97); }
+.omnira-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.omnira-btn:active:not(:disabled) { transform: translateY(0) scale(0.97); box-shadow: var(--omnira-shadow-1); }
 .omnira-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 .omnira-btn:focus-visible {
   outline: 2px solid var(--omnira-accent);
@@ -374,7 +395,7 @@
   background: linear-gradient(135deg, var(--omnira-accent), var(--omnira-accent-2));
   color: var(--omnira-accent-contrast);
 }
-.omnira-btn--primary:hover:not(:disabled) { box-shadow: var(--omnira-glow-accent); }
+.omnira-btn--primary:hover:not(:disabled) { box-shadow: var(--omnira-glow-accent), var(--omnira-shadow-2); }
 
 .omnira-btn--secondary {
   background: var(--omnira-glass-bg);
@@ -386,6 +407,10 @@
 .omnira-btn--danger {
   background: var(--omnira-danger);
   color: var(--omnira-accent-contrast);
+}
+
+.omnira-btn--full {
+  width: 100%;
 }
 
 /* Form fields & cards */
@@ -426,12 +451,16 @@
   font-size: var(--omnira-text-base);
   line-height: 1.5;
   white-space: pre-wrap;
+  box-shadow: var(--omnira-shadow-1);
+  transition: transform var(--omnira-transition-fast), box-shadow var(--omnira-transition-fast);
 }
+.omnira-bubble:hover { transform: translateY(-1px); box-shadow: var(--omnira-shadow-2); }
 
 .omnira-bubble--user {
   background: linear-gradient(135deg, var(--omnira-accent), var(--omnira-accent-2));
   color: var(--omnira-accent-contrast);
   border-bottom-right-radius: 4px;
+  box-shadow: var(--omnira-shadow-1), var(--omnira-inset-highlight);
 }
 
 .omnira-bubble--assistant {
@@ -441,6 +470,7 @@
   -webkit-backdrop-filter: blur(var(--omnira-glass-blur));
   color: var(--omnira-text-primary);
   border-bottom-left-radius: 4px;
+  box-shadow: var(--omnira-shadow-1), var(--omnira-inset-highlight);
 }
 
 @media (prefers-reduced-motion: reduce) {

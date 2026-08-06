@@ -97,6 +97,31 @@ export async function revokeMicrophonePermission(): Promise<void> {
   await request("/permissions/microphone/revoke", { method: "POST" });
 }
 
+export async function grantSystemControlPermission(): Promise<void> {
+  await request("/permissions/system_control/grant", { method: "POST" });
+}
+
+export interface ConversationSummary {
+  id: string;
+  title: string | null;
+  updatedAt: string;
+}
+
+export async function listConversations(): Promise<ConversationSummary[]> {
+  const result = await request<{ conversations: ConversationSummary[] }>("/conversations");
+  return result.conversations;
+}
+
+export interface PersistedMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function getConversationMessages(conversationId: string): Promise<PersistedMessage[]> {
+  const result = await request<{ messages: PersistedMessage[] }>(`/conversations/${conversationId}/messages`);
+  return result.messages;
+}
+
 export async function transcribeAudio(audio: Blob): Promise<string> {
   const form = new FormData();
   form.append("file", audio, "utterance.webm");

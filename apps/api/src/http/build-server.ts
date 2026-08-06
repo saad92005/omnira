@@ -6,6 +6,7 @@ import { type AppConfig, type Logger, toOmniraError, withCorrelationId } from "@
 import type { PrismaClient } from "../db.js";
 import { AuthService } from "../auth/service.js";
 import { PermissionsService } from "../permissions/service.js";
+import { ConversationsService } from "../conversations/service.js";
 import { registerHealthRoutes } from "../routes/health.js";
 import { registerAuthRoutes } from "../routes/auth.js";
 import { registerPermissionRoutes } from "../routes/permissions.js";
@@ -74,6 +75,7 @@ export function buildServer(deps: AppDependencies): FastifyInstance {
 
   const authService = new AuthService(deps.db, { jwtAccessSecret: deps.config.JWT_ACCESS_SECRET });
   const permissionsService = new PermissionsService(deps.db);
+  const conversationsService = new ConversationsService(deps.db);
 
   app.register(
     async (v1) => {
@@ -81,7 +83,7 @@ export function buildServer(deps: AppDependencies): FastifyInstance {
       registerHealthRoutes(v1);
       registerAuthRoutes(v1, authService);
       registerPermissionRoutes(v1, permissionsService, deps.config.JWT_ACCESS_SECRET);
-      registerChatRoutes(v1, deps.config, deps.logger, permissionsService);
+      registerChatRoutes(v1, deps.config, deps.logger, permissionsService, conversationsService);
       registerVoiceRoutes(v1, deps.config, permissionsService);
     },
     { prefix: "/v1" },

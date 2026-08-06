@@ -10,6 +10,13 @@
  */
 export const Capability = {
   Microphone: "microphone",
+  /**
+   * A deliberately narrow slice of §7's "app launching" capability: opening
+   * a URL or a small allowlisted set of known applications (see
+   * apps/api/src/tools/system-control.ts) — never arbitrary command
+   * execution. Full desktop-bridge app/window/file control is Phase 1.
+   */
+  SystemControl: "system_control",
 } as const;
 export type Capability = (typeof Capability)[keyof typeof Capability];
 
@@ -17,6 +24,8 @@ export type Capability = (typeof Capability)[keyof typeof Capability];
 export const CAPABILITY_DESCRIPTIONS: Record<Capability, string> = {
   [Capability.Microphone]:
     "Lets Omnira listen when you press and hold the voice hotkey, so you can talk to it instead of typing.",
+  [Capability.SystemControl]:
+    "Lets Omnira open websites and a small set of known apps (browser, notepad, calculator, file explorer) on your computer when you ask it to.",
 };
 
 /**

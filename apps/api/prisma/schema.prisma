@@ -20,6 +20,7 @@ model User {
 
   refreshTokens    RefreshToken[]
   permissionGrants PermissionGrant[]
+  conversations    Conversation[]
 
   @@map("users")
 }
@@ -56,4 +57,35 @@ model PermissionGrant {
 
   @@index([userId, capability])
   @@map("permission_grants")
+}
+
+/// Persisted chat history (replaces Phase 0's original in-memory Map — see
+/// PROJECT_INDEX.md's known-issues history). Not the semantic long-term
+/// memory system described in master prompt §5.3 — that's real Phase 2+
+/// work (embeddings, provenance, a user-editable view). This is just
+/// "don't lose your conversations on restart," scoped honestly.
+model Conversation {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// First ~60 chars of the first user message, set once and never changed.
+  title     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@index([userId, updatedAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }
