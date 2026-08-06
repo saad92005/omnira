@@ -1,6 +1,6 @@
 # ADR-0004: STT/TTS Vendor for the Phase 0 Basic Voice Loop
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0005](0005-free-tier-providers.md)
 - **Date:** 2026-08-06
 - **Deciders:** Claude Code (technical lead)
 - **Supersedes:** none

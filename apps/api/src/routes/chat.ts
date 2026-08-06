@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { Capability, ForbiddenError, UpstreamError, ValidationError, type AppConfig, type Logger } from "@omnira/core";
 import { ChatAgent, ConversationState } from "@omnira/agents";
-import { AnthropicProvider } from "@omnira/orchestrator";
+import { GroqProvider } from "@omnira/orchestrator";
 import type { PermissionsService } from "../permissions/service.js";
 import { requireAuth } from "../http/authenticate.js";
 
@@ -46,13 +46,11 @@ export function registerChatRoutes(
       throw new ForbiddenError("This conversation belongs to a different user");
     }
 
-    if (!config.ANTHROPIC_API_KEY) {
-      throw new UpstreamError(
-        "Chat is unavailable: ANTHROPIC_API_KEY is not configured on this server.",
-      );
+    if (!config.GROQ_API_KEY) {
+      throw new UpstreamError("Chat is unavailable: GROQ_API_KEY is not configured on this server.");
     }
 
-    const provider = new AnthropicProvider({ apiKey: config.ANTHROPIC_API_KEY });
+    const provider = new GroqProvider({ apiKey: config.GROQ_API_KEY });
     const agent = new ChatAgent(provider, logger);
     const result = await agent.respond(state, message);
 

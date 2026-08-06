@@ -55,11 +55,6 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(envelope?.error.code ?? "UNKNOWN", envelope?.error.message ?? response.statusText);
   }
   if (response.status === 204) return undefined as T;
-
-  const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.startsWith("audio/")) {
-    return (await response.arrayBuffer()) as T;
-  }
   return (await response.json()) as T;
 }
 
@@ -100,8 +95,4 @@ export async function transcribeAudio(audio: Blob): Promise<string> {
   form.append("file", audio, "utterance.webm");
   const result = await request<{ text: string }>("/voice/transcribe", { method: "POST", body: form });
   return result.text;
-}
-
-export async function speakText(text: string): Promise<ArrayBuffer> {
-  return request<ArrayBuffer>("/voice/speak", { method: "POST", body: JSON.stringify({ text }) });
 }

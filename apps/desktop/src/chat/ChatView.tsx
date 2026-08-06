@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Button, MessageBubble, MicButton, VoiceState } from "@omnira/ui-kit";
-import { ApiError, isVoiceAvailable, sendChatMessage, speakText, transcribeAudio } from "../api-client.js";
+import { ApiError, isVoiceAvailable, sendChatMessage, transcribeAudio } from "../api-client.js";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder.js";
+import { speak } from "../speech.js";
 
 interface DisplayMessage {
   id: string;
@@ -19,7 +20,6 @@ export function ChatView(): ReactNode {
   const [voiceState, setVoiceState] = useState<VoiceState | "idle">("idle");
 
   const recorder = useVoiceRecorder();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     isVoiceAvailable()
@@ -83,13 +83,10 @@ export function ChatView(): ReactNode {
     if (!voiceAvailable) return;
     setVoiceState(VoiceState.Speaking);
     try {
-      const audioData = await speakText(text);
-      const blob = new Blob([audioData], { type: "audio/mpeg" });
-      const url = URL.createObjectURL(blob);
-      if (!audioRef.current) audioRef.current = new Audio();
-      audioRef.current.src = url;
-      await audioRef.current.play();
-      audioRef.current.onended = () => URL.revokeObjectURL(url);
+      await speak(text);
+    } catch {
+      // Non-fatal: the reply is already visible as text, so a synthesis
+      // failure (e.g. no speechSynthesis in this webview) is silent-safe.
     } finally {
       setVoiceState("idle");
     }

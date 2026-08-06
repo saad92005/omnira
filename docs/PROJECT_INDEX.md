@@ -10,11 +10,13 @@
 below.** All seven sub-phases from
 [`docs/features/phase-0-foundation.md`](features/phase-0-foundation.md) have
 working code, and the full regression suite (`pnpm build && pnpm lint &&
-pnpm typecheck && pnpm test`) is green. What's *not* done: a live end-to-end
-run against a real Postgres, Anthropic, and OpenAI, and a real Tauri build —
-none of those services/toolchains were available in the environment this was
-built in. See "Known Issues / Tech Debt" and the human-in-the-loop
-requirements the project owner has been given separately.
+pnpm typecheck && pnpm test`) is green. Chat and speech-to-text run on
+Groq's free tier and spoken replies use the browser's built-in
+`speechSynthesis` (ADR-0005, superseding ADR-0003/0004) — no paid API key
+required anywhere in Phase 0. What's *not* done: a live end-to-end run
+against a real Postgres and the Groq API, and a real Tauri build — none of
+those services/toolchains were available in the environment this was built
+in. See "Known Issues / Tech Debt".
 
 ## Completed Modules (with location + test status)
 
@@ -22,12 +24,12 @@ requirements the project owner has been given separately.
 |---|---|---|---|
 | Monorepo scaffold | root, `tsconfig.base.json`, `eslint.config.js`, `.prettierrc.json` | n/a (config) | pnpm workspaces + Turborepo, strict TS |
 | Core (config, logger, errors, permissions) | `packages/core` | 17 tests, green | `loadConfig`, `createRootLogger`, `OmniraError` hierarchy, `Capability` model |
-| Orchestrator (model provider) | `packages/orchestrator` | 3 tests, green | `ModelProvider` interface + `AnthropicProvider` (claude-opus-5, mocked-SDK tests) |
+| Orchestrator (model provider) | `packages/orchestrator` | 3 tests, green | `ModelProvider` interface + `GroqProvider` (llama-3.3-70b-versatile via OpenAI-compatible SDK, mocked-SDK tests) |
 | Agents (chat agent) | `packages/agents` | 6 tests, green | `ConversationState`, `ChatAgent`, activity logging |
-| Voice (STT/TTS providers) | `packages/voice` | 7 tests, green | `OpenAiSttProvider`, `OpenAiTtsProvider` (mocked-fetch tests) |
+| Voice (STT provider) | `packages/voice` | 5 tests, green | `GroqSttProvider` (Whisper, mocked-fetch tests); no server-side TTS — see ADR-0005 |
 | UI kit (design tokens + components) | `packages/ui-kit` | 5 tests, green | `tokens.css`/`tokens.ts`, `Button`, `MicButton`, `MessageBubble` |
 | API (auth, permissions, chat, voice routes) | `apps/api` | 10 unit tests green; 1 integration test file **not run** (needs Postgres) | Fastify + Prisma; see Known Issues |
-| Desktop shell | `apps/desktop` | 3 tests, green | React/Vite frontend verified (build + test); **Tauri/Rust side unverified**, see Known Issues |
+| Desktop shell | `apps/desktop` | 3 tests, green | React/Vite frontend verified (build + test); client-side TTS via `speechSynthesis` (`src/speech.ts`); **Tauri/Rust side unverified**, see Known Issues |
 
 Full regression command: `pnpm build && pnpm lint && pnpm typecheck && pnpm test`
 — all green as of this entry.
@@ -35,9 +37,8 @@ Full regression command: `pnpm build && pnpm lint && pnpm typecheck && pnpm test
 ## In Progress
 
 Nothing mid-implementation. Phase 0 code is complete; what remains is
-verification that requires infrastructure/credentials not present in this
-session (below), and the project owner's decision on whether to proceed to
-Phase 1.
+verification that requires infrastructure not present in this session
+(below), and the project owner's decision on whether to proceed to Phase 1.
 
 ## Not Started
 
@@ -48,15 +49,22 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
 ## Known Issues / Tech Debt
 
 1. **Never run against live infrastructure.** This environment had no
-   running Postgres, no `ANTHROPIC_API_KEY`, no `OPENAI_API_KEY`, and no Rust
-   toolchain. Every unit test that could run without those (51 tests across
-   7 packages) passes; anything requiring them is implemented from the
-   documented API contracts but **not independently verified**. Concretely:
+   running Postgres and no Rust toolchain. Every unit test that could run
+   without those (51 tests across 7 packages) passes; anything requiring
+   external services is implemented from documented API contracts but
+   **not independently verified**. Concretely:
    - `apps/api/src/server.integration.test.ts` needs `docker compose up -d db`
      + `pnpm --filter @omnira/api prisma:migrate` — never executed.
-   - `AnthropicProvider` (chat) and `OpenAiSttProvider`/`OpenAiTtsProvider`
-     (voice) are unit-tested against mocked SDK/fetch calls only. A real
-     `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` end-to-end call has not happened.
+   - `GroqProvider` (chat) and `GroqSttProvider` (voice) are unit-tested
+     against a mocked SDK/fetch, **and** the chat endpoint was smoke-tested
+     live with a raw `curl` against `api.groq.com` using the real
+     `GROQ_API_KEY` — confirmed the key, model ID (`llama-3.3-70b-versatile`),
+     and response shape all match what `GroqProvider` expects. The STT
+     endpoint's request/response shape was confirmed against Groq's docs but
+     not smoke-tested live (a `curl` multipart-upload attempt hit an
+     unrelated local file-path issue in this shell, not a Groq problem).
+     Neither was exercised through the actual running `apps/api` server
+     (that still needs Postgres — see below).
    - `apps/desktop/src-tauri` (Rust) has never been compiled — no `rustc` in
      this environment. It follows the standard `create-tauri-app` v2 shape;
      treat it as unverified until built once.
@@ -73,6 +81,9 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
 5. **No CI pipeline configured yet** — regression checks are run manually via
    the command above. Setting up CI is reasonable early Phase 1 work but was
    not explicitly in Phase 0's scope.
+6. **Groq free-tier rate limits** — no retry/backoff logic exists yet for
+   429s from Groq; they surface as a plain `UpstreamError`. Fine for Phase 0
+   development; revisit if this becomes a real usability problem.
 
 ## Key Decisions (links to ADRs)
 
@@ -80,20 +91,21 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
   — modular monolith, TypeScript everywhere, pnpm + Turborepo, Tauri desktop
   shell, Postgres + pgvector + Redis, REST `/v1` API.
 - [ADR-0002: ORM Choice](adr/0002-orm-choice.md) — Prisma for `apps/api`.
-- [ADR-0003: LLM Provider](adr/0003-llm-provider.md) — Anthropic Claude
-  (`claude-opus-5`) via `@anthropic-ai/sdk`, streamed, no tools in Phase 0.
-- [ADR-0004: STT/TTS Vendor](adr/0004-stt-tts-vendor.md) — OpenAI (Whisper +
-  TTS REST endpoints), single vendor, no SDK dependency.
+- [ADR-0003: LLM Provider](adr/0003-llm-provider.md) *(superseded)* — the
+  original Anthropic Claude decision.
+- [ADR-0004: STT/TTS Vendor](adr/0004-stt-tts-vendor.md) *(superseded)* —
+  the original OpenAI decision.
+- [ADR-0005: Free-Tier Providers](adr/0005-free-tier-providers.md) —
+  **current**: Groq (chat + STT, free tier, no card) + browser
+  `speechSynthesis` (TTS, no vendor at all).
 
 ## Next Session Should Start With
 
 1. Read this file and `/CLAUDE_MASTER_PROMPT.md` in full.
-2. **Do the human-in-the-loop setup** (see the project owner's copy of the
-   "what's needed from you" list from the session that built this — API
-   keys, `docker compose up -d db` + migrate, Rust toolchain + one
-   `tauri dev` run) and confirm the walking skeleton actually works
-   end-to-end: sign up → grant mic → text chat replies → voice
-   transcribe/speak round-trip.
+2. **Do the human-in-the-loop setup**: `docker compose up -d db` + migrate,
+   a Rust toolchain + one `tauri dev` run, and confirm the walking skeleton
+   actually works end-to-end: sign up → grant mic → text chat replies via
+   Groq → voice transcribe (Groq Whisper) → spoken reply (browser TTS).
 3. Fix anything that setup step surfaces (this is expected — nothing above
    was live-verified) before treating Phase 0 as done.
 4. Only after that: write the Phase 1 (Desktop Companion) feature doc under

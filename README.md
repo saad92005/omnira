@@ -31,10 +31,11 @@ pnpm --filter @omnira/desktop tauri dev
 | Variable | Required for | Where to get it |
 |---|---|---|
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | Auth (always) | Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` — run twice, once per secret |
-| `ANTHROPIC_API_KEY` | `/v1/chat` (text chat) | [console.anthropic.com](https://console.anthropic.com) |
-| `OPENAI_API_KEY` | `/v1/voice/transcribe`, `/v1/voice/speak` | [platform.openai.com](https://platform.openai.com) |
+| `GROQ_API_KEY` | `/v1/chat` (text chat) and `/v1/voice/transcribe` | Free, no card required: [console.groq.com](https://console.groq.com) (ADR-0005) |
 
-Everything else (auth, permissions, health) works with no external API keys.
+Spoken replies use the desktop app's built-in browser `speechSynthesis` —
+no key, no server call. Everything else (auth, permissions, health) works
+with no external API keys at all.
 
 ## Repository layout
 
@@ -45,8 +46,8 @@ Everything else (auth, permissions, health) works with no external API keys.
 /packages
   /core           shared types, config, logger, errors, permission model
   /agents         ChatAgent, conversation state, activity log
-  /orchestrator   vendor-agnostic LLM provider interface + Anthropic impl
-  /voice          STT/TTS provider interfaces + OpenAI impl
+  /orchestrator   vendor-agnostic LLM provider interface + Groq impl
+  /voice          STT provider interface + Groq (Whisper) impl
   /ui-kit         design tokens + shared React components
 /docs
   PROJECT_INDEX.md   current state — read this first

@@ -12,9 +12,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
   JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
-  ANTHROPIC_API_KEY: z.string().min(1).optional(),
-  /** Voice pipeline (ADR-0004) — optional; voice fails loudly, not silently, when unset. */
-  OPENAI_API_KEY: z.string().min(1).optional(),
+  /** Chat + speech-to-text (ADR-0005) — optional; those routes fail loudly, not silently, when unset. */
+  GROQ_API_KEY: z.string().min(1).optional(),
   API_PORT: z.coerce.number().int().positive().default(4000),
 });
 

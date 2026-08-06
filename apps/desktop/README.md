@@ -16,8 +16,9 @@ noted in `src-tauri/src/lib.rs`).
 2. **App icons** — see `src-tauri/icons/README.md`; only needed for
    `tauri build`, not `tauri dev`.
 3. `apps/api` running locally (see the repo root README) with
-   `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` set if you want chat and voice to
-   actually respond.
+   `GROQ_API_KEY` set if you want chat and voice transcription to actually
+   respond. Spoken replies use the browser's built-in `speechSynthesis` —
+   no key needed for that part.
 
 ## Run
 

@@ -1,7 +1,8 @@
 /**
- * Vendor-agnostic STT/TTS contracts (ADR-0004), mirroring the
- * ModelProvider pattern in packages/orchestrator (ADR-0003) — apps/api talks
- * only to these interfaces, never to a vendor SDK directly.
+ * Vendor-agnostic STT contract (ADR-0005) — apps/api talks only to this
+ * interface, never to a vendor SDK directly. There is no server-side TTS
+ * provider: per ADR-0005, spoken replies are synthesized client-side via
+ * the browser's built-in `speechSynthesis`, which needs no vendor at all.
  */
 
 export interface TranscriptionResult {
@@ -11,14 +12,4 @@ export interface TranscriptionResult {
 export interface SttProvider {
   readonly name: string;
   transcribe(audio: Buffer, mimeType: string): Promise<TranscriptionResult>;
-}
-
-export interface SpeechResult {
-  audio: Buffer;
-  mimeType: string;
-}
-
-export interface TtsProvider {
-  readonly name: string;
-  synthesize(text: string): Promise<SpeechResult>;
 }

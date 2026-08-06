@@ -1,22 +1,29 @@
 import { UpstreamError } from "@omnira/core";
 import type { SttProvider, TranscriptionResult } from "./providers.js";
 
-const TRANSCRIPTION_URL = "https://api.openai.com/v1/audio/transcriptions";
+/**
+ * Groq's audio-transcription endpoint is OpenAI-compatible (same request
+ * shape as OpenAI's Whisper endpoint: multipart `file` + `model`, JSON
+ * `{ text }` response) — see ADR-0005. Free tier, no card required.
+ * `whisper-large-v3-turbo` is used by default for its higher rate limit;
+ * `whisper-large-v3` is available for higher accuracy if needed.
+ */
+const TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 
-export interface OpenAiSttProviderOptions {
+export interface GroqSttProviderOptions {
   apiKey: string;
   model?: string;
 }
 
-export class OpenAiSttProvider implements SttProvider {
-  readonly name = "openai-whisper";
+export class GroqSttProvider implements SttProvider {
+  readonly name = "groq-whisper";
 
   private readonly apiKey: string;
   private readonly model: string;
 
-  constructor(options: OpenAiSttProviderOptions) {
+  constructor(options: GroqSttProviderOptions) {
     this.apiKey = options.apiKey;
-    this.model = options.model ?? "whisper-1";
+    this.model = options.model ?? "whisper-large-v3-turbo";
   }
 
   async transcribe(audio: Buffer, mimeType: string): Promise<TranscriptionResult> {
