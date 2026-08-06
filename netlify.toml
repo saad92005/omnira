@@ -13,7 +13,19 @@
   # $URL is a Netlify-provided build-time variable (this site's own canonical
   # URL) — baking it into VITE_API_BASE_URL means the frontend always points
   # at itself with no manual dashboard env-var step required.
-  command = "pnpm install --frozen-lockfile && pnpm --filter @omnira/api prisma:generate && VITE_API_BASE_URL=\"$URL/v1\" pnpm -r build"
+  #
+  # The `mkdir/cp` step duplicates the generated Prisma client's wasm+schema
+  # files to a repo-root-level src/generated/prisma/ -- Prisma's own
+  # generated code has a hardcoded bundler-compatibility fallback that
+  # searches `process.cwd() + "src/generated/prisma"` when `__dirname`
+  # doesn't resolve correctly after bundling (verified directly by reading
+  # the generated index.js). Lambda's cwd is the deployed zip's root, which
+  # for a monorepo is repo-root-equivalent, not apps/api/ -- so the real
+  # generated output at apps/api/src/generated/prisma isn't where that
+  # fallback looks. This duplicate is what `included_files` below actually
+  # ships; the real output stays at apps/api/src/generated/prisma for db.ts
+  # to import from normally.
+  command = "pnpm install --frozen-lockfile && pnpm --filter @omnira/api prisma:generate && mkdir -p src/generated/prisma && cp apps/api/src/generated/prisma/query_compiler_bg.wasm apps/api/src/generated/prisma/schema.prisma src/generated/prisma/ && VITE_API_BASE_URL=\"$URL/v1\" pnpm -r build"
   publish = "apps/desktop/dist"
 
 [functions]
@@ -22,10 +34,10 @@
   # Prisma's engineType="client" query compiler loads its .wasm file via a
   # real fs.readFileSync at a real path, not a require()/import esbuild's
   # static analysis can trace and inline -- verified locally by running
-  # Netlify's own bundler (@netlify/zip-it-and-ship-it) and finding the file
-  # genuinely missing from the output. This forces Netlify to copy it
-  # alongside the bundle regardless of what esbuild's tracing found.
-  included_files = ["apps/api/src/generated/prisma/*.wasm"]
+  # Netlify's own bundler and finding the file genuinely missing from the
+  # output. This forces Netlify to copy the repo-root duplicate (see above)
+  # alongside the bundle at exactly the path Prisma's own fallback expects.
+  included_files = ["src/generated/prisma/*.wasm", "src/generated/prisma/schema.prisma"]
 
 # Order matters: Netlify matches redirects top-to-bottom, first hit wins.
 # The API rewrite must come before the SPA catch-all below, or every /v1/*

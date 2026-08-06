@@ -13,6 +13,11 @@ target/
 # (build step and postinstall both run it) — including the platform-specific
 # query engine binary, which shouldn't be committed regardless.
 apps/api/src/generated/
+# Netlify's build command duplicates the wasm+schema files here at deploy
+# time only (see netlify.toml) -- Prisma's own bundler-compatibility
+# fallback looks for them at this repo-root-relative path. Never created
+# locally except by this repo's own test/deploy runs.
+/src/generated/
 .env
 .env.local
 .DS_Store
