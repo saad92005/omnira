@@ -35,7 +35,11 @@ export function registerChatRoutes(
       throw new UpstreamError("Chat is unavailable: GROQ_API_KEY is not configured on this server.");
     }
 
-    const systemControlGranted = await permissionsService.isActive(userId, Capability.SystemControl);
+    // SYSTEM_CONTROL_AVAILABLE is a deployment-level kill-switch (ADR-0006/0007):
+    // these tools act on whatever machine apps/api runs on, so they must stay
+    // off on any hosted deployment regardless of the user's own permission grant.
+    const systemControlGranted =
+      config.SYSTEM_CONTROL_AVAILABLE && (await permissionsService.isActive(userId, Capability.SystemControl));
     const provider = new GroqProvider({ apiKey: config.GROQ_API_KEY });
     const agent = new ChatAgent(provider, logger, buildToolHandlers(systemControlGranted));
     const result = await agent.respond(state, message);

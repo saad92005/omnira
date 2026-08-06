@@ -1,0 +1,51 @@
+# Render Blueprint for apps/api's public deployment (ADR-0007's deployment
+# gating: SYSTEM_CONTROL_AVAILABLE is forced off here — those tools act on
+# whatever machine this process runs on, which only makes sense for the
+# local desktop deployment, not a hosted server answering a phone's request).
+#
+# Usage: render.com -> New -> Blueprint -> select this repo. Render reads
+# this file automatically. Fill in the four `sync: false` secrets in the
+# dashboard after the first deploy — see README's "Public deployment" section
+# for where to get each one (they're the same values as apps/api/.env).
+services:
+  - type: web
+    name: omnira-api
+    runtime: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @omnira/api prisma:generate && pnpm -r build
+    startCommand: pnpm --filter @omnira/api start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SYSTEM_CONTROL_AVAILABLE
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PUBLIC_WEB_ORIGIN
+        sync: false
+
+  # The web build (apps/desktop's Vite output), hosted as a static site so
+  # it's reachable — and "Add to Home Screen"-installable, per the PWA
+  # manifest — from any phone or laptop browser. VITE_API_BASE_URL is baked
+  # in at build time, so it's hardcoded to match omnira-api's name above
+  # rather than resolved dynamically — if you rename the API service, update
+  # this to match.
+  - type: web
+    name: omnira-web
+    runtime: static
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @omnira/ui-kit build && pnpm --filter @omnira/desktop build
+    staticPublishPath: apps/desktop/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://omnira-api.onrender.com/v1
+    routes:
+      # Client-side routing safety net — Omnira is a single-page app.
+      - type: rewrite
+        source: /*
+        destination: /index.html

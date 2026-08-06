@@ -29,12 +29,12 @@ declare module "fastify" {
  * The desktop webview is a browser and enforces CORS like any other — a
  * missing Access-Control-Allow-Origin header doesn't surface as an HTTP
  * error, it fails the fetch() call itself before any response is readable.
- * Scoped to local origins only: the Vite dev server (any port, since it
- * auto-increments if 1420 is taken) and Tauri's packaged-app origin on
- * Windows/Linux. Tighten this to an explicit allowlist once Phase 5 adds
- * real hosted deployments — "any localhost port" is fine for a
- * single-machine desktop app talking to its own local API, not for a
- * public-facing one.
+ * Scoped to local origins by default: the Vite dev server (any port, since
+ * it auto-increments if 1420 is taken) and Tauri's packaged-app origin on
+ * Windows/Linux — "any localhost port" is fine for a single-machine desktop
+ * app talking to its own local API. `PUBLIC_WEB_ORIGIN` adds exactly one
+ * more allowed origin (the deployed web build's URL) once apps/api is
+ * hosted publicly — still an explicit allowlist, never a wildcard.
  */
 const ALLOWED_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|tauri\.localhost)(:\d+)?$/;
 
@@ -44,7 +44,7 @@ export function buildServer(deps: AppDependencies): FastifyInstance {
   app.register(cors, {
     origin: (origin, cb) => {
       // No Origin header at all (curl, server-to-server, same-origin) — allow.
-      if (!origin || ALLOWED_ORIGIN.test(origin)) {
+      if (!origin || ALLOWED_ORIGIN.test(origin) || origin === deps.config.PUBLIC_WEB_ORIGIN) {
         cb(null, true);
         return;
       }

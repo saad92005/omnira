@@ -36,4 +36,15 @@ describe("loadConfig", () => {
     const config = loadConfig({ ...validEnv, API_PORT: "8080" });
     expect(config.API_PORT).toBe(8080);
   });
+
+  it("defaults SYSTEM_CONTROL_AVAILABLE to true, and coerces the string 'false' to disable it", () => {
+    expect(loadConfig(validEnv).SYSTEM_CONTROL_AVAILABLE).toBe(true);
+    expect(loadConfig({ ...validEnv, SYSTEM_CONTROL_AVAILABLE: "false" }).SYSTEM_CONTROL_AVAILABLE).toBe(false);
+  });
+
+  it("prefers the host-assigned PORT over API_PORT, and doesn't leak PORT itself into the config", () => {
+    const config = loadConfig({ ...validEnv, API_PORT: "4000", PORT: "10000" });
+    expect(config.API_PORT).toBe(10000);
+    expect(config).not.toHaveProperty("PORT");
+  });
 });
