@@ -8,6 +8,11 @@ target/
 
 # Tauri auto-regenerates this from tauri.conf.json + capabilities on every build.
 **/gen/schemas/
+
+# Prisma regenerates this from schema.prisma on every `prisma generate`
+# (build step and postinstall both run it) — including the platform-specific
+# query engine binary, which shouldn't be committed regardless.
+apps/api/src/generated/
 .env
 .env.local
 .DS_Store

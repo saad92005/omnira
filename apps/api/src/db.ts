@@ -1,6 +1,11 @@
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaClient } from "@prisma/client";
+// Generated into src/generated/prisma (schema.prisma's generator `output`)
+// instead of the default node_modules/@prisma/client location — see the
+// comment there for why: pnpm's node_modules/.prisma symlink structure was
+// exactly what broke Netlify Functions' bundler ("Cannot find module
+// '.prisma/client/default'"), independent of using a driver adapter.
+import { PrismaClient } from "./generated/prisma/client.js";
 import ws from "ws";
 
 // Node doesn't have a global WebSocket in every runtime Omnira deploys to
@@ -10,17 +15,12 @@ neonConfig.webSocketConstructor = ws;
 
 /**
  * Single Prisma client for the process, via Neon's serverless driver
- * adapter (HTTP/WebSocket, GA since Prisma 6.16) rather than Prisma's
- * default binary query engine. Not optional for the Netlify Functions
- * deployment — esbuild's function bundler can't trace the binary engine's
- * dynamic `require`, so it never made it into the deployed bundle
- * ("Cannot find module '.prisma/client/default'"). The adapter has no
- * native binary at all, so there's nothing to fail to bundle, and it works
- * identically for the local/desktop persistent-server deployment.
+ * adapter (HTTP/WebSocket, GA since Prisma 6.16). Works identically for the
+ * local/desktop persistent-server deployment as well as Netlify Functions.
  */
 export function createDbClient(databaseUrl: string): PrismaClient {
   const adapter = new PrismaNeon({ connectionString: databaseUrl });
   return new PrismaClient({ adapter });
 }
 
-export type { PrismaClient } from "@prisma/client";
+export type { PrismaClient } from "./generated/prisma/client.js";
