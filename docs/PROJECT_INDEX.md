@@ -6,8 +6,14 @@
 
 ## Current Phase
 
-**Phase 0 (Foundation) — complete and live-verified end to end.** All seven
-sub-phases from
+**Phase 0 (Foundation) — complete and live-verified end to end**, plus a
+follow-on round of project-owner-requested polish ("Phase 8" in session
+history — no formal phase doc, tracked here instead): Aurora v1.1 dark
+glassmorphic redesign with 3D depth (layered shadows, glossy orb shading,
+button/bubble lift), persisted conversation history with a sidebar + New
+Chat control, permission-gated system control (open app/URL) via tool
+calling (ADR-0006), an auto-focus fix for the message input, and a real
+Windows installer build via `tauri build`. All seven sub-phases from
 [`docs/features/phase-0-foundation.md`](features/phase-0-foundation.md) have
 working code, the full regression suite (`pnpm build && pnpm lint &&
 pnpm typecheck && pnpm test`) is green, and the whole walking skeleton has
@@ -23,7 +29,15 @@ been exercised for real — not just against mocks:
 - **Desktop, live:** Rust + MSVC Build Tools installed; `cargo build`
   produced a real linked `omnira-desktop.exe`; `pnpm tauri dev` launched an
   actual window rendering the onboarding/sign-in screen with the correct
-  design tokens (confirmed via a screenshot from the project owner).
+  design tokens (confirmed via a screenshot from the project owner). A full
+  `tauri build` release bundle was also run and verified for real: the NSIS
+  installer (`Omnira_0.0.0_x64-setup.exe`) was silently installed
+  (`%LOCALAPPDATA%\Omnira`, no admin needed), the installed `.exe` was
+  launched and confirmed running with a live window, then cleanly
+  uninstalled via its own uninstaller. The MSI bundle also built
+  successfully but needs admin rights to install (WiX per-machine default,
+  `Error 1925` without it) — not a defect, just the expected difference
+  between the two installer types (see README).
 - No paid API key anywhere (ADR-0005: Groq free tier for chat + STT, browser
   `speechSynthesis` for TTS) and no Docker/virtualization dependency (Neon
   free-tier Postgres instead of local Docker — virtualization is disabled in
@@ -76,15 +90,18 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
    mocked `fetch`, but no actual audio file was ever POSTed to
    `/v1/voice/transcribe` in this session. Try it from the running desktop
    app (hold the mic button) for the real test.
-3. **Conversation storage is in-memory** (`apps/api/src/routes/chat.ts`) —
-   restarting the API process loses all conversations. No `conversations`
-   table exists yet; that's Phase 1+ persistence work, called out explicitly
-   in the route's code comment.
+3. ~~Conversation storage is in-memory~~ — **resolved.** Conversations and
+   messages now persist to Postgres (`Conversation`/`Message` Prisma models,
+   `apps/api/src/conversations/service.ts`), with a sidebar + New Chat
+   control in the desktop app to browse and start conversations.
 4. **Tauri app icons are placeholders, not real artwork** — a generated
    brand-accent circle, just enough to satisfy the build. See
    `src-tauri/icons/README.md` for how to regenerate from real artwork.
-   A full `tauri build` (release bundle, not just `cargo build`/`tauri dev`)
-   has not been run.
+   A full `tauri build` release bundle has now been run and verified on
+   Windows — real `.msi` and NSIS `.exe` installers, see README's
+   "Building a distributable app" section — but the icon itself is still
+   a placeholder, and macOS/Linux bundles have not been built (require
+   building on those OSes — Tauri doesn't cross-compile native bundles).
 5. **Onboarding "has completed onboarding" is not persisted** — it re-runs
    every app launch in this session's implementation (`apps/desktop/src/App.tsx`).
    Noted as a Phase 1 follow-up in that file's doc comment.
@@ -108,18 +125,20 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
 - [ADR-0005: Free-Tier Providers](adr/0005-free-tier-providers.md) —
   **current**: Groq (chat + STT, free tier, no card) + browser
   `speechSynthesis` (TTS, no vendor at all).
+- [ADR-0006: Tool Calling & System Control](adr/0006-tool-calling-and-system-control.md)
+  — permission-gated `open_url`/`open_app` tools via OpenAI-style function
+  calling through Groq; allowlisted, `shell:false`, no arbitrary execution.
 - **Hosted Postgres over local Docker** — not yet its own ADR (should be
-  written up as ADR-0006 if this becomes the permanent path rather than a
-  one-off workaround for this machine's disabled virtualization); decision
-  and rationale are captured in Known Issues #1 above for now.
+  written up if this becomes the permanent path rather than a one-off
+  workaround for this machine's disabled virtualization); decision and
+  rationale are captured in Known Issues #1 above for now.
 
 ## Next Session Should Start With
 
 1. Read this file and `/CLAUDE_MASTER_PROMPT.md` in full.
-2. Optional polish before Phase 1: write ADR-0006 for the hosted-Postgres
-   decision if it's staying permanent, smoke-test real audio through
-   `/v1/voice/transcribe`, run a full `tauri build` release bundle, replace
-   the placeholder app icons with real artwork.
+2. Optional polish: smoke-test real audio through `/v1/voice/transcribe`,
+   replace the placeholder app icons with real artwork, add CI, persist the
+   "has completed onboarding" flag (Known Issue #5).
 3. Otherwise: write the Phase 1 (Desktop Companion) feature doc under
    `/docs/features/` and confirm scope with the project owner before
    implementing, per the master prompt's mandatory phased workflow (§17).

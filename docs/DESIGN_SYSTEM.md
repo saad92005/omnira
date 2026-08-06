@@ -1,11 +1,12 @@
-# Omnira Design System — v1.1 "Aurora"
+# Omnira Design System — v1.2 "Aurora"
 
 Established before any screen is built, per master prompt §14. v0 (Phase 0
-walking skeleton) shipped a minimal functional token set; v1.1 layers a real
-visual identity on top of the same tokens — expanding, not replacing, per
-§14's "one system, not two parallel stylesheets." Extend it as Phase 1+ adds
-real screens (dashboard, knowledge graph, marketplace), not by inventing
-new one-off values per screen.
+walking skeleton) shipped a minimal functional token set; v1.1 layered a
+real visual identity on top of the same tokens; v1.2 adds a 3D depth scale
+(layered shadows, glossy orb shading, hover lift) on top of that — expanding,
+not replacing, per §14's "one system, not two parallel stylesheets." Extend
+it as Phase 1+ adds real screens (dashboard, knowledge graph, marketplace),
+not by inventing new one-off values per screen.
 
 Implementation: `packages/ui-kit/src/tokens.css` (CSS custom properties,
 keyframes, and reusable component classes) + `packages/ui-kit/src/tokens.ts`
@@ -122,6 +123,23 @@ its color).
   Rendered once at the app root, behind all content (`z-index: 0`), never
   per-screen — one instance, not a background-image trick repeated on every
   card.
+
+## Elevation / 3D Depth (v1.2)
+
+Three layered shadow tokens (`--omnira-shadow-1/2/3`, each a tight contact
+shadow plus a soft diffuse one — never a single flat `box-shadow`) plus
+`--omnira-inset-highlight` (a 1px top inner highlight that reads as a lit
+bevel edge on glass panels and bubbles). Depth increases with a surface's
+"nearness" to the user: buttons and bubbles sit at `--omnira-shadow-1`
+(nudging to `--omnira-shadow-2` on hover/press), glass panels (sidebar,
+composer, cards) sit at `--omnira-shadow-2` permanently. Interactive
+elements lift on hover (`translateY(-1px)` to `-2px`) and settle on
+press — depth responds to touch, it isn't just decoration.
+
+The voice orb's core (`.omnira-orb__core`) uses a radial-gradient highlight
+plus an inset shadow to read as a lit sphere rather than a flat disc — the
+one deliberately more literal "3D" element, since it's the product's single
+focal affordance.
 
 ## Accessibility Baseline (§14)
 
