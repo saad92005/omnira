@@ -29,12 +29,10 @@
     "@prisma/client": "catalog:",
     "fastify": "catalog:",
     "jose": "catalog:",
-    "ws": "^8.21.2",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/ws": "^8.18.1",
     "prisma": "catalog:",
     "rimraf": "catalog:",
     "tsx": "catalog:",
