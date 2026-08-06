@@ -47,15 +47,19 @@ export class AuthService {
     }
 
     const next = issueRefreshToken();
-    await this.db.$transaction([
-      this.db.refreshToken.update({
-        where: { id: stored.id },
-        data: { revokedAt: new Date(), replacedByTokenId: next.tokenHash },
-      }),
-      this.db.refreshToken.create({
-        data: { userId: stored.userId, tokenHash: next.tokenHash, expiresAt: next.expiresAt },
-      }),
-    ]);
+    // Sequential, not $transaction([...]) -- Neon's HTTP driver adapter
+    // (apps/api/src/db.ts) rejects Prisma transactions outright, confirmed
+    // live in production. Worst case on a crash between these two calls is
+    // an old token revoked with no replacement issued yet, which just forces
+    // a fresh login -- not a security gap (the old token is still consumed,
+    // not left valid).
+    await this.db.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date(), replacedByTokenId: next.tokenHash },
+    });
+    await this.db.refreshToken.create({
+      data: { userId: stored.userId, tokenHash: next.tokenHash, expiresAt: next.expiresAt },
+    });
 
     const accessToken = await signAccessToken(stored.userId, this.config.jwtAccessSecret);
     return { accessToken, refreshToken: next.token };

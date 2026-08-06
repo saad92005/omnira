@@ -60,16 +60,21 @@ export class ConversationsService {
       select: { title: true },
     });
 
-    await this.db.$transaction([
-      this.db.message.create({ data: { conversationId, role: "user", content: userMessage } }),
-      this.db.message.create({ data: { conversationId, role: "assistant", content: assistantReply } }),
-      this.db.conversation.update({
-        where: { id: conversationId },
-        data: {
-          updatedAt: new Date(),
-          ...(conversation?.title ? {} : { title: userMessage.slice(0, TITLE_MAX_LENGTH) }),
-        },
-      }),
-    ]);
+    // Sequential, not $transaction([...]) -- Neon's HTTP driver adapter
+    // (apps/api/src/db.ts) rejects Prisma transactions outright ("Transactions
+    // are not supported in HTTP mode"), confirmed live in production. None of
+    // these three writes need atomicity strongly enough to justify switching
+    // back to the WebSocket adapter, which crashes on Netlify Functions for
+    // unrelated reasons (see db.ts) -- a message failing to save after its
+    // sibling succeeded is a rare, low-stakes inconsistency, not data loss.
+    await this.db.message.create({ data: { conversationId, role: "user", content: userMessage } });
+    await this.db.message.create({ data: { conversationId, role: "assistant", content: assistantReply } });
+    await this.db.conversation.update({
+      where: { id: conversationId },
+      data: {
+        updatedAt: new Date(),
+        ...(conversation?.title ? {} : { title: userMessage.slice(0, TITLE_MAX_LENGTH) }),
+      },
+    });
   }
 }
