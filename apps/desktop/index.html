@@ -2,7 +2,18 @@
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#05050a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Omnira" />
+    <!-- Only meaningful for the web build (apps/api deployed publicly) — a
+         no-op inside the Tauri desktop shell, which never hits a browser's
+         install/offline path. See docs/PROJECT_INDEX.md for deployment status. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon-512.png" />
+    <link rel="icon" href="/icon-128.png" />
     <title>Omnira</title>
   </head>
   <body>

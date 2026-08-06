@@ -5,6 +5,8 @@ export interface MicButtonProps {
   state: VoiceState | "idle";
   disabled?: boolean;
   disabledReason?: string;
+  /** "lg" renders the HUD centerpiece variant (bigger, segmented tick ring). Defaults to "sm". */
+  size?: "sm" | "lg";
   /** Push-to-talk: caller starts capture on press, stops on release. */
   onPressStart: () => void;
   onPressEnd: () => void;
@@ -24,8 +26,16 @@ const STATE_LABEL: Record<VoiceState | "idle", string> = {
  * aria-label/title, per the §14 accessibility baseline (never color alone).
  * See /docs/DESIGN_SYSTEM.md "Voice UI State Machine" for the state table.
  */
-export function MicButton({ state, disabled, disabledReason, onPressStart, onPressEnd }: MicButtonProps): ReactNode {
+export function MicButton({
+  state,
+  disabled,
+  disabledReason,
+  size = "sm",
+  onPressStart,
+  onPressEnd,
+}: MicButtonProps): ReactNode {
   const label = disabled ? (disabledReason ?? "Voice is unavailable") : STATE_LABEL[state];
+  const iconSize = size === "lg" ? 40 : 18;
 
   return (
     <button
@@ -34,17 +44,19 @@ export function MicButton({ state, disabled, disabledReason, onPressStart, onPre
       title={label}
       disabled={disabled}
       data-state={state}
+      data-size={size}
       data-disabled={disabled ? "true" : "false"}
       className="omnira-orb"
       onPointerDown={disabled ? undefined : onPressStart}
       onPointerUp={disabled ? undefined : onPressEnd}
       onPointerLeave={disabled ? undefined : onPressEnd}
     >
+      {size === "lg" && <span className="omnira-orb__ticks" aria-hidden="true" />}
       <span className="omnira-orb__glow" aria-hidden="true" />
       <span className="omnira-orb__ring" aria-hidden="true" />
       <span className="omnira-orb__ring omnira-orb__ring--inner" aria-hidden="true" />
       <span className="omnira-orb__core" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none">
           <path
             d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"
             stroke="currentColor"

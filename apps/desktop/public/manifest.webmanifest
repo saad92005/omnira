@@ -1,0 +1,15 @@
+{
+  "name": "Omnira",
+  "short_name": "Omnira",
+  "description": "Omnira — a personal AI assistant you can talk to.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#05050a",
+  "theme_color": "#05050a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

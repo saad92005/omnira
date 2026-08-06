@@ -1,5 +1,5 @@
 import type { ToolHandler } from "@omnira/agents";
-import { ALLOWED_APP_NAMES, openApp, openUrl } from "./system-control.js";
+import { ALLOWED_APP_NAMES, SAFE_DIR_NAMES, createFile, createFolder, openApp, openUrl } from "./system-control.js";
 
 /**
  * Always-available: read-only, no side effects, no risk (§5.4's read-only
@@ -49,12 +49,56 @@ const OPEN_APP_TOOL: ToolHandler = {
   },
 };
 
+const CREATE_FILE_TOOL: ToolHandler = {
+  definition: {
+    name: "create_file",
+    description: "Create a new text file with the given content in a folder on the user's computer.",
+    parameters: {
+      type: "object",
+      properties: {
+        location: { type: "string", enum: SAFE_DIR_NAMES, description: "Which folder to create it in." },
+        fileName: { type: "string", description: "The file name, including extension, e.g. notes.txt." },
+        content: { type: "string", description: "The text content to write into the file. Empty string for a blank file." },
+      },
+      required: ["location", "fileName", "content"],
+      additionalProperties: false,
+    },
+  },
+  execute: async (args) => {
+    const { path } = await createFile(String(args["location"] ?? ""), String(args["fileName"] ?? ""), String(args["content"] ?? ""));
+    return `Created file at ${path}.`;
+  },
+};
+
+const CREATE_FOLDER_TOOL: ToolHandler = {
+  definition: {
+    name: "create_folder",
+    description: "Create a new folder on the user's computer.",
+    parameters: {
+      type: "object",
+      properties: {
+        location: { type: "string", enum: SAFE_DIR_NAMES, description: "Which parent folder to create it in." },
+        folderName: { type: "string", description: "The new folder's name." },
+      },
+      required: ["location", "folderName"],
+      additionalProperties: false,
+    },
+  },
+  execute: async (args) => {
+    const { path } = await createFolder(String(args["location"] ?? ""), String(args["folderName"] ?? ""));
+    return `Created folder at ${path}.`;
+  },
+};
+
 /**
- * System-control tools (open_url, open_app) are only offered to the model
- * when the user has granted Capability.SystemControl — an ungranted
- * capability means the tool doesn't exist for this turn at all, not "exists
- * but denied," so the model won't even attempt it. See ADR-0006.
+ * System-control tools (open_url, open_app, create_file, create_folder) are
+ * only offered to the model when the user has granted
+ * Capability.SystemControl — an ungranted capability means the tool doesn't
+ * exist for this turn at all, not "exists but denied," so the model won't
+ * even attempt it. See ADR-0006.
  */
 export function buildToolHandlers(systemControlGranted: boolean): ToolHandler[] {
-  return systemControlGranted ? [DATETIME_TOOL, OPEN_URL_TOOL, OPEN_APP_TOOL] : [DATETIME_TOOL];
+  return systemControlGranted
+    ? [DATETIME_TOOL, OPEN_URL_TOOL, OPEN_APP_TOOL, CREATE_FILE_TOOL, CREATE_FOLDER_TOOL]
+    : [DATETIME_TOOL];
 }

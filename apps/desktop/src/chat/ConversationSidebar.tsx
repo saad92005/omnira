@@ -17,11 +17,10 @@ export function ConversationSidebar({
 }: ConversationSidebarProps): ReactNode {
   return (
     <aside
-      className="omnira-glass"
+      className="omnira-glass omnira-hud-panel"
       style={{
-        width: 240,
-        flexShrink: 0,
-        margin: "var(--omnira-space-4) 0 var(--omnira-space-4) var(--omnira-space-4)",
+        height: "100%",
+        boxSizing: "border-box",
         padding: "var(--omnira-space-3)",
         display: "flex",
         flexDirection: "column",
@@ -29,6 +28,9 @@ export function ConversationSidebar({
         overflowY: "auto",
       }}
     >
+      <p className="omnira-hud-label" style={{ margin: "0 0 var(--omnira-space-1)" }}>
+        Conversations
+      </p>
       <Button variant="primary" onClick={onNewChat} fullWidth>
         + New chat
       </Button>

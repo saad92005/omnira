@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 import { Button, MessageBubble, MicButton, TypingIndicator, VoiceState } from "@omnira/ui-kit";
 import {
   ApiError,
+  getActiveCapabilities,
   getConversationMessages,
   isVoiceAvailable,
   listConversations,
@@ -19,6 +20,16 @@ interface DisplayMessage {
   text: string;
 }
 
+const VOICE_MODE_KEY = "omnira.voiceMode";
+
+const STATE_TEXT: Record<VoiceState | "idle", string> = {
+  idle: "Hold the core to talk",
+  [VoiceState.Listening]: "Listening…",
+  [VoiceState.Thinking]: "Thinking…",
+  [VoiceState.Speaking]: "Speaking…",
+  [VoiceState.AwaitingConfirmation]: "Awaiting confirmation…",
+};
+
 export function ChatView(): ReactNode {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState("");
@@ -26,8 +37,12 @@ export function ChatView(): ReactNode {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [voiceAvailable, setVoiceAvailable] = useState(false);
+  const [micGranted, setMicGranted] = useState(false);
+  const [systemControlGranted, setSystemControlGranted] = useState(false);
+  const [apiReachable, setApiReachable] = useState(true);
   const [voiceState, setVoiceState] = useState<VoiceState | "idle">("idle");
+  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem(VOICE_MODE_KEY) === "true");
+  const [now, setNow] = useState(() => new Date());
 
   const recorder = useVoiceRecorder();
   const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
@@ -35,26 +50,43 @@ export function ChatView(): ReactNode {
 
   const refreshConversations = useCallback(() => {
     listConversations()
-      .then(setConversations)
-      .catch(() => {
-        /* Non-critical — the sidebar just stays as-is. */
-      });
+      .then((list) => {
+        setConversations(list);
+        setApiReachable(true);
+      })
+      .catch(() => setApiReachable(false));
   }, []);
 
   useEffect(() => {
     isVoiceAvailable()
-      .then(setVoiceAvailable)
-      .catch(() => setVoiceAvailable(false));
+      .then(setMicGranted)
+      .catch(() => setMicGranted(false));
+    getActiveCapabilities()
+      .then((active) => setSystemControlGranted(active.has("system_control")))
+      .catch(() => undefined);
     refreshConversations();
   }, [refreshConversations]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, sending]);
 
+  function toggleVoiceMode(): void {
+    setVoiceMode((prev) => {
+      const next = !prev;
+      localStorage.setItem(VOICE_MODE_KEY, String(next));
+      return next;
+    });
+  }
+
   const send = useCallback(
     async (text: string) => {
-      if (!text.trim()) return;
+      if (!text.trim()) return undefined;
       setError(null);
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", text }]);
       setInput("");
@@ -78,10 +110,22 @@ export function ChatView(): ReactNode {
     [conversationId, refreshConversations],
   );
 
+  async function speakReply(text: string): Promise<void> {
+    setVoiceState(VoiceState.Speaking);
+    try {
+      await speak(text);
+    } catch {
+      // Non-fatal: the reply is already visible as text, so a synthesis
+      // failure (e.g. no speechSynthesis in this webview) is silent-safe.
+    } finally {
+      setVoiceState("idle");
+    }
+  }
+
   async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
     const reply = await send(input);
-    if (reply) await speakReply(reply);
+    if (reply && voiceMode) await speakReply(reply);
   }
 
   function handleNewChat(): void {
@@ -120,131 +164,156 @@ export function ChatView(): ReactNode {
     try {
       const audio = await recorder.stop();
       const text = await transcribeAudio(audio);
-      // Show the transcript before sending — misheard input must stay visible and editable.
-      setInput(text);
-      inputRef.current?.focus();
+      if (voiceMode) {
+        // Voice mode is a full loop: speak the command, Omnira acts and
+        // replies out loud — no extra click to confirm what was heard.
+        const reply = await send(text);
+        if (reply) await speakReply(reply);
+      } else {
+        // Voice mode off: surface the transcript for review/edit before sending.
+        setInput(text);
+        inputRef.current?.focus();
+        setVoiceState("idle");
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not transcribe that. Try again.");
-    } finally {
-      setVoiceState("idle");
-    }
-  }
-
-  async function speakReply(text: string): Promise<void> {
-    if (!voiceAvailable) return;
-    setVoiceState(VoiceState.Speaking);
-    try {
-      await speak(text);
-    } catch {
-      // Non-fatal: the reply is already visible as text, so a synthesis
-      // failure (e.g. no speechSynthesis in this webview) is silent-safe.
-    } finally {
       setVoiceState("idle");
     }
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "var(--omnira-font-sans)" }}>
-      <ConversationSidebar
-        conversations={conversations}
-        activeConversationId={conversationId}
-        onSelect={(id) => void handleSelectConversation(id)}
-        onNewChat={handleNewChat}
-      />
+    <div className="omnira-hud-shell">
+      <div className="omnira-hud-grid" aria-hidden="true" />
 
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-        <header
-          style={{
-            padding: "var(--omnira-space-3) var(--omnira-space-4)",
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--omnira-space-2)",
-          }}
-        >
-          <h1 className="omnira-gradient-text" style={{ fontSize: "var(--omnira-text-lg)", fontWeight: 700, margin: 0 }}>
-            Omnira
-          </h1>
-        </header>
-
-        <div
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "0 var(--omnira-space-4) var(--omnira-space-4)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--omnira-space-3)",
-          }}
-        >
-          {messages.length === 0 && !sending && (
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "var(--omnira-space-2)",
-                color: "var(--omnira-text-secondary)",
-                fontSize: "var(--omnira-text-sm)",
-                textAlign: "center",
-              }}
-            >
-              <p style={{ margin: 0 }}>Say hello, or hold the orb below to talk.</p>
-            </div>
-          )}
-          {messages.map((m) => (
-            <MessageBubble key={m.id} role={m.role}>
-              {m.text}
-            </MessageBubble>
-          ))}
-          {sending && <TypingIndicator />}
-          <div ref={scrollAnchorRef} />
-        </div>
-
-        {error && (
-          <p
-            role="alert"
-            style={{ color: "var(--omnira-danger)", fontSize: "var(--omnira-text-sm)", padding: "0 var(--omnira-space-4)" }}
+      <header className="omnira-hud-topbar omnira-glass omnira-hud-panel" style={headerStyle}>
+        <h1 className="omnira-gradient-text" style={{ fontSize: "var(--omnira-text-lg)", fontWeight: 700, margin: 0 }}>
+          OMNIRA
+        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--omnira-space-4)" }}>
+          <span className="omnira-hud-indicator" data-active={micGranted}>
+            <span className="omnira-hud-indicator__dot" aria-hidden="true" />
+            Mic
+          </span>
+          <span className="omnira-hud-indicator" data-active={systemControlGranted}>
+            <span className="omnira-hud-indicator__dot" aria-hidden="true" />
+            Sys
+          </span>
+          <span className="omnira-hud-indicator" data-active={apiReachable}>
+            <span className="omnira-hud-indicator__dot" aria-hidden="true" />
+            Net
+          </span>
+          <span className="omnira-hud-value" style={{ fontSize: "var(--omnira-text-sm)" }}>
+            {now.toLocaleTimeString()}
+          </span>
+          <button
+            type="button"
+            className="omnira-hud-switch"
+            data-on={voiceMode}
+            onClick={toggleVoiceMode}
+            aria-pressed={voiceMode}
           >
-            {error}
-          </p>
-        )}
+            Voice mode
+            <span className="omnira-hud-switch__track" aria-hidden="true">
+              <span className="omnira-hud-switch__thumb" />
+            </span>
+          </button>
+        </div>
+      </header>
 
-        <form
-          onSubmit={handleSubmit}
-          className="omnira-glass"
-          style={{
-            display: "flex",
-            gap: "var(--omnira-space-3)",
-            margin: "var(--omnira-space-4)",
-            marginTop: 0,
-            padding: "var(--omnira-space-3)",
-            alignItems: "center",
-          }}
-        >
+      <div className="omnira-hud-sidebar">
+        <ConversationSidebar
+          conversations={conversations}
+          activeConversationId={conversationId}
+          onSelect={(id) => void handleSelectConversation(id)}
+          onNewChat={handleNewChat}
+        />
+      </div>
+
+      <div className="omnira-hud-center" style={centerStyle}>
+        <div style={{ position: "relative", display: "inline-flex" }}>
+          <span className="omnira-hud-radar" aria-hidden="true" />
           <MicButton
             state={voiceState}
-            disabled={!voiceAvailable}
+            size="lg"
+            disabled={!micGranted}
             disabledReason="Grant microphone access in settings to use voice"
             onPressStart={handleMicPressStart}
             onPressEnd={() => void handleMicPressEnd()}
           />
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Message Omnira…"
-            disabled={sending}
-            autoFocus
-            className="omnira-input"
-            style={{ flex: 1, border: "none", background: "transparent" }}
-          />
-          <Button type="submit" disabled={sending || !input.trim()}>
-            Send
-          </Button>
-        </form>
+        </div>
+        <p className="omnira-hud-label" style={{ marginTop: "var(--omnira-space-4)" }}>
+          {STATE_TEXT[voiceState]}
+        </p>
+        {error && (
+          <p role="alert" style={{ color: "var(--omnira-danger)", fontSize: "var(--omnira-text-sm)", textAlign: "center" }}>
+            {error}
+          </p>
+        )}
       </div>
+
+      <div className="omnira-hud-commlog omnira-glass omnira-hud-panel" style={commLogStyle}>
+        <p className="omnira-hud-label" style={{ margin: 0 }}>
+          Comm log
+        </p>
+        {messages.length === 0 && !sending && (
+          <p style={{ color: "var(--omnira-text-secondary)", fontSize: "var(--omnira-text-sm)" }}>
+            Say hello, or hold the core to talk.
+          </p>
+        )}
+        {messages.map((m) => (
+          <MessageBubble key={m.id} role={m.role}>
+            {m.text}
+          </MessageBubble>
+        ))}
+        {sending && <TypingIndicator />}
+        <div ref={scrollAnchorRef} />
+      </div>
+
+      <form onSubmit={handleSubmit} className="omnira-hud-console omnira-glass omnira-hud-panel" style={consoleStyle}>
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Message Omnira…"
+          disabled={sending}
+          autoFocus
+          className="omnira-input"
+          style={{ flex: 1, border: "none", background: "transparent" }}
+        />
+        <Button type="submit" disabled={sending || !input.trim()}>
+          Send
+        </Button>
+      </form>
     </div>
   );
 }
+
+const headerStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "var(--omnira-space-3) var(--omnira-space-4)",
+} as const;
+
+const centerStyle = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "var(--omnira-space-2)",
+} as const;
+
+const commLogStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "var(--omnira-space-3)",
+  padding: "var(--omnira-space-3) var(--omnira-space-4)",
+  overflowY: "auto",
+} as const;
+
+const consoleStyle = {
+  display: "flex",
+  gap: "var(--omnira-space-3)",
+  padding: "var(--omnira-space-3)",
+  alignItems: "center",
+} as const;

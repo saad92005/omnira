@@ -6,14 +6,18 @@
 
 ## Current Phase
 
-**Phase 0 (Foundation) — complete and live-verified end to end**, plus a
-follow-on round of project-owner-requested polish ("Phase 8" in session
-history — no formal phase doc, tracked here instead): Aurora v1.1 dark
-glassmorphic redesign with 3D depth (layered shadows, glossy orb shading,
-button/bubble lift), persisted conversation history with a sidebar + New
-Chat control, permission-gated system control (open app/URL) via tool
-calling (ADR-0006), an auto-focus fix for the message input, and a real
-Windows installer build via `tauri build`. All seven sub-phases from
+**Phase 0 (Foundation) — complete and live-verified end to end**, plus two
+follow-on rounds of project-owner-requested polish (tracked here, no formal
+phase doc): "Phase 8" — Aurora v1.1/1.2 dark glassmorphic redesign with 3D
+depth, persisted conversation history with a sidebar + New Chat control,
+permission-gated system control (open app/URL) via tool calling (ADR-0006),
+an auto-focus fix, and a real Windows installer build via `tauri build`;
+"Phase 9" — an Aurora v1.3 "HUD" instrument-panel redesign of the chat
+screen, expanded system control (`create_file`/`create_folder`, ADR-0007),
+a real system prompt (persona, spoken-confirmation style, Roman Urdu
+support), a persisted voice-mode toggle that closes the speak → act → hear
+loop, and a PWA manifest/service worker so the web build is installable on
+mobile. All seven sub-phases from
 [`docs/features/phase-0-foundation.md`](features/phase-0-foundation.md) have
 working code, the full regression suite (`pnpm build && pnpm lint &&
 pnpm typecheck && pnpm test`) is green, and the whole walking skeleton has
@@ -128,6 +132,10 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
 - [ADR-0006: Tool Calling & System Control](adr/0006-tool-calling-and-system-control.md)
   — permission-gated `open_url`/`open_app` tools via OpenAI-style function
   calling through Groq; allowlisted, `shell:false`, no arbitrary execution.
+- [ADR-0007: Automation, Persona & Voice Loop](adr/0007-automation-persona-and-voice-loop.md)
+  — `create_file`/`create_folder` (same allowlist discipline), the first
+  real system prompt (spoken-style confirmations, Roman Urdu), and the
+  persisted voice-mode toggle that closes the speak→act→hear loop.
 - **Hosted Postgres over local Docker** — not yet its own ADR (should be
   written up if this becomes the permanent path rather than a one-off
   workaround for this machine's disabled virtualization); decision and

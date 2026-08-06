@@ -108,6 +108,26 @@ describe("ChatAgent", () => {
     expect(result.reply).toContain('no tool named "does_not_exist"');
   });
 
+  it("prepends a system prompt ahead of the conversation history on every turn", async () => {
+    const provider: ModelProvider = {
+      name: "fake",
+      generateReply: vi.fn(async (_conversation, onDelta) => {
+        onDelta({ text: "Hi" });
+        return { text: "Hi", model: "fake-model", usage: { inputTokens: 1, outputTokens: 1 } };
+      }),
+    };
+
+    const agent = new ChatAgent(provider, silentLogger());
+    const state = new ConversationState("user-1");
+    await agent.respond(state, "hello");
+
+    const [conversation] = vi.mocked(provider.generateReply).mock.calls[0] ?? [];
+    expect(conversation?.[0]).toMatchObject({ role: "system" });
+    expect(conversation?.[1]).toMatchObject({ role: "user", content: "hello" });
+    // The system prompt itself is never persisted as a ConversationTurn.
+    expect(state.turns.map((t) => t.role)).toEqual(["user", "assistant"]);
+  });
+
   it("omits the tools option entirely when no tools are configured (no tool round-trip attempted)", async () => {
     const provider: ModelProvider = {
       name: "fake",

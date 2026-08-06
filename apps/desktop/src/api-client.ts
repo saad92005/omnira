@@ -101,6 +101,16 @@ export async function grantSystemControlPermission(): Promise<void> {
   await request("/permissions/system_control/grant", { method: "POST" });
 }
 
+export interface PermissionGrant {
+  capability: string;
+  revokedAt: string | null;
+}
+
+export async function getActiveCapabilities(): Promise<Set<string>> {
+  const result = await request<{ grants: PermissionGrant[] }>("/permissions");
+  return new Set(result.grants.filter((g) => g.revokedAt === null).map((g) => g.capability));
+}
+
 export interface ConversationSummary {
   id: string;
   title: string | null;

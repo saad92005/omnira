@@ -3,6 +3,7 @@ import {
   ApiError,
   clearTokens,
   getAccessToken,
+  getActiveCapabilities,
   getConversationMessages,
   listConversations,
   login,
@@ -97,5 +98,26 @@ describe("conversations", () => {
 
     const messages = await getConversationMessages("c1");
     expect(messages).toEqual([{ role: "user", content: "hi" }]);
+  });
+});
+
+describe("getActiveCapabilities", () => {
+  it("returns only the capabilities whose most recent grant is still active", async () => {
+    setTokens("access-1", "refresh-1");
+    global.fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            grants: [
+              { capability: "microphone", revokedAt: null },
+              { capability: "system_control", revokedAt: "2026-01-01T00:00:00Z" },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    ) as never;
+
+    const active = await getActiveCapabilities();
+    expect(active).toEqual(new Set(["microphone"]));
   });
 });

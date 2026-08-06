@@ -1,4 +1,7 @@
 import { spawn } from "node:child_process";
+import { mkdir, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join, normalize, sep } from "node:path";
 import { ForbiddenError, UpstreamError, ValidationError } from "@omnira/core";
 
 /**
@@ -84,4 +87,55 @@ export async function openApp(app: string): Promise<{ label: string }> {
   const [command, args] = entry.command();
   await run(command, args);
   return { label: entry.label };
+}
+
+/**
+ * File/folder creation is scoped to two fixed, user-owned folders — never an
+ * LLM-supplied path. This is the same allowlist discipline as ALLOWED_APPS:
+ * the set of writable locations is fixed in code, not expanded by input.
+ */
+const SAFE_DIRS = {
+  desktop: join(homedir(), "Desktop"),
+  documents: join(homedir(), "Documents"),
+} as const;
+
+export type SafeDir = keyof typeof SAFE_DIRS;
+export const SAFE_DIR_NAMES = Object.keys(SAFE_DIRS) as SafeDir[];
+
+/** No path separators, traversal segments, or control characters — a bare file/folder name only. */
+function isSafeEntryName(name: string): boolean {
+  if (name === "" || name === "." || name === "..") return false;
+  // eslint-disable-next-line no-control-regex -- deliberately excluding control chars from filenames
+  return !/[\\/:*?"<>|\x00-\x1f]/u.test(name);
+}
+
+function resolveSafePath(location: string, entryName: string): string {
+  if (!(location in SAFE_DIRS)) {
+    throw new ForbiddenError(`Omnira can only create files or folders in: ${SAFE_DIR_NAMES.join(", ")}.`);
+  }
+  if (!isSafeEntryName(entryName)) {
+    throw new ValidationError("That name isn't allowed — no path separators or special characters.");
+  }
+  const dir = SAFE_DIRS[location as SafeDir];
+  const target = normalize(join(dir, entryName));
+  // Belt-and-suspenders: the resolved path must still be a direct child of
+  // the allowlisted directory, even though isSafeEntryName already rejects
+  // traversal segments.
+  if (!target.startsWith(normalize(dir) + sep)) {
+    throw new ForbiddenError("That path escapes the allowed folder.");
+  }
+  return target;
+}
+
+export async function createFile(location: string, fileName: string, content: string): Promise<{ path: string }> {
+  const path = resolveSafePath(location, fileName);
+  await mkdir(SAFE_DIRS[location as SafeDir], { recursive: true });
+  await writeFile(path, content, "utf8");
+  return { path };
+}
+
+export async function createFolder(location: string, folderName: string): Promise<{ path: string }> {
+  const path = resolveSafePath(location, folderName);
+  await mkdir(path, { recursive: true });
+  return { path };
 }

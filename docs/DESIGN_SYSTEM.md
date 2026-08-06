@@ -1,12 +1,15 @@
-# Omnira Design System — v1.2 "Aurora"
+# Omnira Design System — v1.3 "Aurora HUD"
 
 Established before any screen is built, per master prompt §14. v0 (Phase 0
 walking skeleton) shipped a minimal functional token set; v1.1 layered a
-real visual identity on top of the same tokens; v1.2 adds a 3D depth scale
-(layered shadows, glossy orb shading, hover lift) on top of that — expanding,
-not replacing, per §14's "one system, not two parallel stylesheets." Extend
-it as Phase 1+ adds real screens (dashboard, knowledge graph, marketplace),
-not by inventing new one-off values per screen.
+real visual identity on top of the same tokens; v1.2 added a 3D depth scale
+(layered shadows, glossy orb shading, hover lift); v1.3 adds an
+instrument-panel ("HUD") presentation layer — a grid shell, corner-bracketed
+glass panels, status indicators, and a large segmented-ring voice core — on
+top of all of that, expanding, not replacing, per §14's "one system, not two
+parallel stylesheets." Extend it as Phase 1+ adds real screens (dashboard,
+knowledge graph, marketplace), not by inventing new one-off values per
+screen.
 
 Implementation: `packages/ui-kit/src/tokens.css` (CSS custom properties,
 keyframes, and reusable component classes) + `packages/ui-kit/src/tokens.ts`
@@ -140,6 +143,36 @@ The voice orb's core (`.omnira-orb__core`) uses a radial-gradient highlight
 plus an inset shadow to read as a lit sphere rather than a flat disc — the
 one deliberately more literal "3D" element, since it's the product's single
 focal affordance.
+
+## HUD Shell (v1.3)
+
+`apps/desktop/src/chat/ChatView.tsx` is the one screen using this layer —
+a CSS grid (`.omnira-hud-shell`) with five areas: a top bar (wordmark, live
+capability/connection indicators, clock, voice-mode switch), a sidebar
+(conversation list), a center column (the large voice core), a comm-log
+panel (message transcript), and a bottom console (text input). Below
+900px width it collapses to a single stacked column — this is the first
+screen in the app that needed a responsive breakpoint at all.
+
+- `.omnira-hud-panel` — the corner-bracket-framed glass panel used for
+  every HUD region. Layers on top of `.omnira-glass`, doesn't replace it.
+- `.omnira-hud-indicator` — a labeled status dot (`data-active="true"`
+  lights it green with a glow). Every indicator in the app reflects **real**
+  state — capability grants, API reachability — never a decorative or
+  fabricated reading. This is a hard rule for this layer: no fake
+  "network traffic," "satellite," or sensor-style widgets with invented
+  numbers, unlike the sci-fi HUD references this look draws from.
+- `.omnira-hud-switch` — a labeled toggle (voice mode). `data-on="true"`
+  drives both the visual state and must always match a real persisted
+  boolean, same rule as indicators.
+- `MicButton`'s `size="lg"` variant — the HUD centerpiece: a wider orb plus
+  `.omnira-orb__ticks`, a repeating-conic-gradient dial ring masked to a
+  thin band around the edge, rotating slowly and speeding up/recoloring
+  with the same `data-state` machine the small orb already used. One
+  `MicButton` implementation, two sizes — not a forked component.
+- `.omnira-hud-grid` — a fixed, full-viewport faint line grid behind
+  everything (masked to fade toward the edges), the one purely decorative
+  addition, layered above `AuroraBackground` and below all HUD panels.
 
 ## Accessibility Baseline (§14)
 
