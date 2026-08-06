@@ -148,35 +148,42 @@ request from your phone (there's no "your Desktop" on a cloud container).
 chat, conversation history, and voice all work the same either way, only
 the automation actions are local-only.
 
-Deployment target: **Railway** (API) + **Netlify** (web build) — both
-genuinely card-free for this use. (`render.yaml` is also in the repo as an
-alternative if Render doesn't ask your account for a card — it did for this
-project's own account, which is why Railway/Netlify is the primary path
-here.) Railway's free trial credit is a small monthly allowance, fine for
-personal/light-traffic use, not a guarantee of 24/7 uptime the way a paid
-tier would be.
+**Deployment target: a single Netlify site, using Netlify Functions
+instead of an always-on server.** Render and Railway both required a card
+on this project's own account despite documenting card-free free tiers
+(likely anti-abuse verification, industry-wide as of 2026 — see the
+`render.yaml`/`railway.json` files still in the repo if you'd rather use
+one of those and don't mind verifying a card). Netlify Functions sidestep
+this: `apps/api/netlify/functions/api.ts` wraps the exact same Fastify app
+(`buildServer()`) via `@fastify/aws-lambda` instead of calling `.listen()`,
+so it runs as serverless functions on Netlify's free tier rather than a
+persistent server — genuinely no card, verified by invoking the handler
+locally against the real database before ever deploying it. One Netlify
+site serves both the static web app and the API, so there's no second host
+and no cross-host CORS dance.
 
-1. **API on Railway**: [railway.app](https://railway.app) → sign up with
-   GitHub → **New Project → Deploy from GitHub repo** → select `omnira`.
-   Railway reads `railway.json` (build/start commands are already set — no
-   need to configure them by hand). Add environment variables (same values
-   as your local `apps/api/.env`): `NODE_ENV=production`,
+1. [netlify.com](https://netlify.com) → sign up with GitHub → **Add new
+   site → Import an existing project** → select the `omnira` repo. Netlify
+   reads `netlify.toml` for the build command, publish directory, and
+   function directory — nothing to configure by hand there.
+2. In **Site settings → Environment variables**, add (same values as your
+   local `apps/api/.env`): `NODE_ENV=production`,
    `SYSTEM_CONTROL_AVAILABLE=false`, `DATABASE_URL`, `JWT_ACCESS_SECRET`,
-   `JWT_REFRESH_SECRET`, `GROQ_API_KEY`. Once it deploys, go to
-   **Settings → Networking → Generate Domain** to get a public URL like
-   `https://omnira-api-production-xxxx.up.railway.app` — copy it, you'll
-   need it next.
-2. **Web app on Netlify**: [netlify.com](https://netlify.com) → sign up with
-   GitHub → **Add new site → Import an existing project** → select `omnira`.
-   Netlify reads `netlify.toml` for the build command and publish directory.
-   In **Site settings → Environment variables**, add `VITE_API_BASE_URL` set
-   to `<your Railway URL>/v1` (from step 1). Deploy — Netlify gives you a
-   URL like `https://omnira.netlify.app` (or pick a custom subdomain in
-   Site settings → Domain management).
-3. **Close the loop**: back on Railway, add one more environment variable to
-   the API service: `PUBLIC_WEB_ORIGIN` set to your Netlify URL from step 2
-   (e.g. `https://omnira.netlify.app`) — this is what lets the deployed web
-   app's browser origin pass CORS. Railway redeploys automatically when you
-   save an environment variable.
-4. Once both are live, open the Netlify URL on a phone — from Chrome/Safari,
-   "Add to Home Screen" installs it like a native app via the PWA manifest.
+   `JWT_REFRESH_SECRET`, `GROQ_API_KEY`.
+3. Deploy. Netlify assigns a URL like `https://omnira.netlify.app` (pick a
+   custom subdomain in Site settings → Domain management if you want).
+   `VITE_API_BASE_URL` is set automatically at build time to this same
+   site's URL (`netlify.toml` bakes in Netlify's own `$URL` build variable)
+   — no manual step for that one.
+4. Add one more environment variable once you know the site's URL:
+   `PUBLIC_WEB_ORIGIN` set to that same URL (e.g. `https://omnira.netlify.app`)
+   — needed for the CORS allowlist even though frontend and API share an
+   origin here. Trigger a redeploy after saving it (**Deploys → Trigger
+   deploy**).
+5. Open the site on a phone — from Chrome/Safari, "Add to Home Screen"
+   installs it like a native app via the PWA manifest.
+
+Function cold starts add roughly 1-2 seconds to the first request after a
+period of inactivity — noticeably snappier than an always-on free tier's
+15-minute-sleep wakeup, since only that one request pays the cost, not a
+whole container spin-up.

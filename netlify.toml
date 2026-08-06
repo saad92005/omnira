@@ -1,14 +1,35 @@
-# Netlify hosts the web build of apps/desktop — the same React app, usable
-# in any browser, installable to a phone home screen via the PWA manifest
-# in apps/desktop/public/. VITE_API_BASE_URL is set in Netlify's dashboard
-# (Site settings -> Environment variables), not here, since it depends on
-# whatever URL Railway assigns the API service at deploy time.
+# One Netlify site hosts both halves of Omnira:
+#  - the web build of apps/desktop (static, same PWA-installable React app)
+#  - apps/api, wrapped as a Netlify Function (apps/api/netlify/functions/api.ts)
+#    instead of a persistent server, specifically to avoid the card-verification
+#    wall every "always-on web service" free tier hit for this project (see
+#    README's "Public deployment" section for the full story).
+# Frontend and API share this same site's origin, but PUBLIC_WEB_ORIGIN still
+# needs to be set to this site's URL in Netlify's dashboard (Site settings ->
+# Environment variables) — browsers don't uniformly skip sending an Origin
+# header on same-origin requests, so the CORS allowlist needs the exact match
+# rather than assuming same-origin implies no Origin header at all.
 [build]
-  command = "pnpm install --frozen-lockfile && pnpm --filter @omnira/ui-kit build && pnpm --filter @omnira/desktop build"
+  # $URL is a Netlify-provided build-time variable (this site's own canonical
+  # URL) — baking it into VITE_API_BASE_URL means the frontend always points
+  # at itself with no manual dashboard env-var step required.
+  command = "pnpm install --frozen-lockfile && pnpm --filter @omnira/api prisma:generate && VITE_API_BASE_URL=\"$URL/v1\" pnpm -r build"
   publish = "apps/desktop/dist"
 
-# Single-page app: any path that isn't a real static file falls back to
-# index.html so client-side routing works on a hard refresh/deep link.
+[functions]
+  directory = "apps/api/netlify/functions"
+  node_bundler = "esbuild"
+
+# Order matters: Netlify matches redirects top-to-bottom, first hit wins.
+# The API rewrite must come before the SPA catch-all below, or every /v1/*
+# request would be swallowed by the catch-all and served index.html instead.
+[[redirects]]
+  from = "/v1/*"
+  to = "/.netlify/functions/api/v1/:splat"
+  status = 200
+
+# Single-page app: any other path that isn't a real static file falls back
+# to index.html so client-side routing works on a hard refresh/deep link.
 [[redirects]]
   from = "/*"
   to = "/index.html"
