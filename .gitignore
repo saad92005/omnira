@@ -5,6 +5,9 @@ build/
 .next/
 target/
 *.log
+
+# Tauri auto-regenerates this from tauri.conf.json + capabilities on every build.
+**/gen/schemas/
 .env
 .env.local
 .DS_Store

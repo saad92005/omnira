@@ -13,10 +13,13 @@ working code, and the full regression suite (`pnpm build && pnpm lint &&
 pnpm typecheck && pnpm test`) is green. Chat and speech-to-text run on
 Groq's free tier and spoken replies use the browser's built-in
 `speechSynthesis` (ADR-0005, superseding ADR-0003/0004) — no paid API key
-required anywhere in Phase 0. What's *not* done: a live end-to-end run
-against a real Postgres and the Groq API, and a real Tauri build — none of
-those services/toolchains were available in the environment this was built
-in. See "Known Issues / Tech Debt".
+required anywhere in Phase 0. Rust/MSVC toolchain was installed and the
+Tauri desktop app was built end to end: `cargo build` produced a real
+linked `omnira-desktop.exe`, and `tauri dev` launched it as a live window
+against the Vite dev server with no errors. What's still *not* done: a live
+end-to-end run against a real Postgres (Docker Desktop's first-run setup is
+blocked on a GUI dialog only the project owner can click through). See
+"Known Issues / Tech Debt".
 
 ## Completed Modules (with location + test status)
 
@@ -29,7 +32,7 @@ in. See "Known Issues / Tech Debt".
 | Voice (STT provider) | `packages/voice` | 5 tests, green | `GroqSttProvider` (Whisper, mocked-fetch tests); no server-side TTS — see ADR-0005 |
 | UI kit (design tokens + components) | `packages/ui-kit` | 5 tests, green | `tokens.css`/`tokens.ts`, `Button`, `MicButton`, `MessageBubble` |
 | API (auth, permissions, chat, voice routes) | `apps/api` | 10 unit tests green; 1 integration test file **not run** (needs Postgres) | Fastify + Prisma; see Known Issues |
-| Desktop shell | `apps/desktop` | 3 tests, green | React/Vite frontend verified (build + test); client-side TTS via `speechSynthesis` (`src/speech.ts`); **Tauri/Rust side unverified**, see Known Issues |
+| Desktop shell | `apps/desktop` | 3 tests, green | React/Vite frontend verified (build + test); client-side TTS via `speechSynthesis` (`src/speech.ts`); **Tauri/Rust side built and launched live** (`cargo build` + `tauri dev`) |
 
 Full regression command: `pnpm build && pnpm lint && pnpm typecheck && pnpm test`
 — all green as of this entry.
@@ -65,16 +68,21 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
      unrelated local file-path issue in this shell, not a Groq problem).
      Neither was exercised through the actual running `apps/api` server
      (that still needs Postgres — see below).
-   - `apps/desktop/src-tauri` (Rust) has never been compiled — no `rustc` in
-     this environment. It follows the standard `create-tauri-app` v2 shape;
-     treat it as unverified until built once.
+   - `apps/desktop/src-tauri` (Rust) — **now verified**: Rust + MSVC Build
+     Tools were installed, `cargo build` succeeded (real linked
+     `omnira-desktop.exe`), and `pnpm tauri dev` launched a live window
+     against the Vite dev server with no errors. Placeholder app icons
+     (brand-accent circle, not real artwork) were generated to unblock the
+     build — see `src-tauri/icons/README.md`. Not yet verified: the app's
+     actual network calls to `apps/api` (blocked on Postgres below), and a
+     release/bundle build (`tauri build`).
 2. **Conversation storage is in-memory** (`apps/api/src/routes/chat.ts`) —
    restarting the API process loses all conversations. No `conversations`
    table exists yet; that's Phase 1+ persistence work, called out explicitly
    in the route's code comment.
-3. **Tauri app icons are not generated** — `src-tauri/icons/` has only a
-   README explaining the `tauri icon` command to run. Blocks `tauri build`
-   (a full bundle), not `tauri dev`.
+3. **Tauri app icons are placeholders, not real artwork** — a generated
+   brand-accent circle, just enough to satisfy the build. See
+   `src-tauri/icons/README.md` for how to regenerate from real artwork.
 4. **Onboarding "has completed onboarding" is not persisted** — it re-runs
    every app launch in this session's implementation (`apps/desktop/src/App.tsx`).
    Noted as a Phase 1 follow-up in that file's doc comment.
