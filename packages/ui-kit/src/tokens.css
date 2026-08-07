@@ -46,27 +46,29 @@
     --omnira-warning: #fbbf24;
 
     --omnira-cyan: #00e5ff;
-    --omnira-blue: #5b7cff;
+    --omnira-blue: #6a5cff;
     --omnira-purple: #8b5cf6;
+    --omnira-magenta: #ff2ea6;
     --omnira-glow: #00ffff;
 
-    --omnira-glass-bg: rgba(18, 24, 40, 0.55);
+    --omnira-glass-bg: rgba(20, 22, 42, 0.55);
     --omnira-glass-border: rgba(0, 229, 255, 0.18);
     --omnira-glass-blur: 22px;
-    --omnira-glow-accent: 0 0 40px rgba(0, 255, 255, 0.3);
-    --omnira-aurora-a: rgba(91, 124, 255, 0.32);
-    --omnira-aurora-b: rgba(0, 229, 255, 0.24);
-    --omnira-aurora-c: rgba(139, 92, 246, 0.26);
+    --omnira-glow-accent: 0 0 36px rgba(0, 229, 255, 0.28), 0 0 64px rgba(255, 46, 166, 0.16);
+    --omnira-aurora-a: rgba(106, 92, 255, 0.34);
+    --omnira-aurora-b: rgba(0, 229, 255, 0.26);
+    --omnira-aurora-c: rgba(255, 46, 166, 0.22);
   }
 }
 
 :root[data-theme="dark"] {
-  /* v2 "Neuralink HUD" palette — electric cyan primary, blue secondary,
-     violet reserved for "AI reasoning" states, on a near-black navy field.
-     Named aliases (--omnira-cyan etc.) below exist alongside the semantic
-     --omnira-accent* names so new HUD-specific code can reach for the
-     literal color while the ~40 existing rules keyed to --omnira-accent*
-     keep working unchanged. */
+  /* v3 "Neuralink HUD" palette — electric cyan primary, indigo secondary,
+     violet reserved for "AI reasoning" states, and a vivid magenta accent
+     woven into gradients/glows for visual energy, on a near-black navy
+     field. Named aliases (--omnira-cyan etc.) below exist alongside the
+     semantic --omnira-accent* names so new HUD-specific code can reach for
+     the literal color while the ~40 existing rules keyed to
+     --omnira-accent* keep working unchanged. */
   --omnira-bg: #070b14;
   --omnira-surface: #10152a;
   --omnira-surface-raised: #131a2c;
@@ -82,17 +84,18 @@
   --omnira-warning: #fbbf24;
 
   --omnira-cyan: #00e5ff;
-  --omnira-blue: #5b7cff;
+  --omnira-blue: #6a5cff;
   --omnira-purple: #8b5cf6;
+  --omnira-magenta: #ff2ea6;
   --omnira-glow: #00ffff;
 
-  --omnira-glass-bg: rgba(18, 24, 40, 0.55);
+  --omnira-glass-bg: rgba(20, 22, 42, 0.55);
   --omnira-glass-border: rgba(0, 229, 255, 0.18);
   --omnira-glass-blur: 22px;
-  --omnira-glow-accent: 0 0 40px rgba(0, 255, 255, 0.3);
-  --omnira-aurora-a: rgba(91, 124, 255, 0.32);
-  --omnira-aurora-b: rgba(0, 229, 255, 0.24);
-  --omnira-aurora-c: rgba(139, 92, 246, 0.26);
+  --omnira-glow-accent: 0 0 36px rgba(0, 229, 255, 0.28), 0 0 64px rgba(255, 46, 166, 0.16);
+  --omnira-aurora-a: rgba(106, 92, 255, 0.34);
+  --omnira-aurora-b: rgba(0, 229, 255, 0.26);
+  --omnira-aurora-c: rgba(255, 46, 166, 0.22);
 }
 
 :root {
@@ -305,6 +308,8 @@ h1, h2, h3, h4 {
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
 }
+.omnira-particle--magenta { background: var(--omnira-magenta); box-shadow: 0 0 6px 1px var(--omnira-magenta); }
+.omnira-particle--purple { background: var(--omnira-purple); box-shadow: 0 0 6px 1px var(--omnira-purple); }
 
 /* Two fixed-position radar "blips" pinging on independent, slow, offset
    cycles — an ambient sign of life at the corners of the screen even while
@@ -368,14 +373,15 @@ h1, h2, h3, h4 {
 
 .omnira-gradient-text {
   background: linear-gradient(
-    120deg,
-    var(--omnira-accent),
-    var(--omnira-accent-2)
+    100deg,
+    var(--omnira-cyan),
+    var(--omnira-blue) 55%,
+    var(--omnira-magenta)
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--omnira-accent) 45%, transparent));
+  filter: drop-shadow(0 2px 10px color-mix(in srgb, var(--omnira-magenta) 35%, transparent));
 }
 
 /* Typing / thinking indicator */
@@ -423,10 +429,11 @@ h1, h2, h3, h4 {
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    var(--omnira-accent),
-    var(--omnira-accent-2),
-    var(--omnira-accent-3),
-    var(--omnira-accent)
+    var(--omnira-blue),
+    var(--omnira-cyan),
+    var(--omnira-magenta),
+    var(--omnira-purple),
+    var(--omnira-blue)
   );
   opacity: 0.85;
   animation: omnira-orb-spin 6s linear infinite;
@@ -606,7 +613,7 @@ h1, h2, h3, h4 {
   inset: -66px;
   animation: omnira-orb-spin-reverse 12s linear infinite;
 }
-.omnira-orb__particle-orbit--2 span { background: var(--omnira-blue); box-shadow: 0 0 6px 1px var(--omnira-blue); }
+.omnira-orb__particle-orbit--2 span { background: var(--omnira-magenta); box-shadow: 0 0 6px 1px var(--omnira-magenta); }
 .omnira-orb__particle-orbit--3 { inset: -28px; animation: omnira-orb-spin 5.5s linear infinite; }
 .omnira-orb__particle-orbit--3 span { background: var(--omnira-purple); box-shadow: 0 0 6px 1px var(--omnira-purple); }
 .omnira-orb[data-state="thinking"] .omnira-orb__particle-orbit--1,
@@ -641,8 +648,8 @@ h1, h2, h3, h4 {
 }
 .omnira-orb__ring3d--c {
   inset: -16px;
-  border-top-color: var(--omnira-accent-3);
-  border-bottom-color: var(--omnira-accent-3);
+  border-top-color: var(--omnira-magenta);
+  border-bottom-color: var(--omnira-magenta);
   animation: omnira-ring3d-spin-c 6.5s linear infinite;
 }
 @keyframes omnira-ring3d-spin-a {
@@ -734,7 +741,7 @@ h1, h2, h3, h4 {
 }
 
 .omnira-btn--primary {
-  background: linear-gradient(135deg, var(--omnira-accent), var(--omnira-accent-2));
+  background: linear-gradient(135deg, var(--omnira-cyan), var(--omnira-blue) 60%, var(--omnira-magenta));
   color: var(--omnira-accent-contrast);
 }
 .omnira-btn--primary:hover:not(:disabled) { box-shadow: var(--omnira-glow-accent), var(--omnira-shadow-2); }

@@ -6,6 +6,15 @@ interface Particle {
   size: number;
   duration: number;
   delay: number;
+  hue: "" | "omnira-particle--magenta" | "omnira-particle--purple";
+}
+
+/** Mostly cyan with occasional magenta/purple accents — variety without losing the primary color identity. */
+function pickHue(): Particle["hue"] {
+  const roll = Math.random();
+  if (roll < 0.14) return "omnira-particle--magenta";
+  if (roll < 0.26) return "omnira-particle--purple";
+  return "";
 }
 
 /** Stable across re-renders (generated once via useMemo) so particles never jump position. */
@@ -18,6 +27,7 @@ function generateParticles(count: number): Particle[] {
       size: 1 + Math.random() * 2.5,
       duration: 16 + Math.random() * 20,
       delay: Math.random() * -30,
+      hue: pickHue(),
     });
   }
   return particles;
@@ -45,7 +55,7 @@ export function AuroraBackground(): ReactNode {
         {particles.map((p, i) => (
           <span
             key={i}
-            className="omnira-particle"
+            className={`omnira-particle ${p.hue}`}
             style={{
               left: `${p.left}%`,
               top: `${p.top}%`,
