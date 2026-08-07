@@ -15,8 +15,9 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@omnira/ui-kit";
-import type { ConversationSummary } from "../api-client.js";
+import type { AgentPersonaSummary, ConversationSummary } from "../api-client.js";
 import type { UseAutomationsResult } from "../hooks/useAutomations.js";
+import { AgentsPanel } from "./AgentsPanel.js";
 import { AutomationsPanel } from "./AutomationsPanel.js";
 import { MODULE_INFO } from "./dockModules.js";
 import { FilesPanel } from "./FilesPanel.js";
@@ -24,7 +25,6 @@ import { ModulePanel } from "./ModulePanel.js";
 import { TerminalPanel } from "./TerminalPanel.js";
 
 const MODULE_ICONS: Record<string, LucideIcon> = {
-  agents: Bot,
   browser: Globe,
   analytics: ChartBar,
   music: Music2,
@@ -44,6 +44,9 @@ export interface DockPanelsProps extends UseAutomationsResult {
   onRevokeMic: () => Promise<void>;
   onGrantSystemControl: () => Promise<void>;
   onSignOut: () => void;
+  agents: AgentPersonaSummary[];
+  activeAgentId: string;
+  onSelectAgent: (id: string) => void;
 }
 
 export function DockPanels({
@@ -63,6 +66,9 @@ export function DockPanels({
   addAutomation,
   removeAutomation,
   toggleAutomation,
+  agents,
+  activeAgentId,
+  onSelectAgent,
 }: DockPanelsProps): ReactNode {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +131,14 @@ export function DockPanels({
           A fixed set of read-only diagnostic commands — no free-text/arbitrary shell access.
         </p>
         <TerminalPanel />
+      </ModulePanel>
+    );
+  }
+
+  if (activeModule === "agents") {
+    return (
+      <ModulePanel title="Agents" icon={<Bot size={18} strokeWidth={2} />} onClose={onClose}>
+        <AgentsPanel agents={agents} activeAgentId={activeAgentId} onSelect={onSelectAgent} />
       </ModulePanel>
     );
   }

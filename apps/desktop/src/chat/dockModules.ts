@@ -13,11 +13,6 @@ export interface ModuleInfo {
  * docs/PROJECT_INDEX.md for what's actually built.
  */
 export const MODULE_INFO: Record<string, ModuleInfo> = {
-  agents: {
-    title: "Agents",
-    description: "Omnira currently runs a single chat agent that handles every request directly, end to end.",
-    related: "A multi-agent system — specialized agents that plan and hand off work to each other — isn't built yet.",
-  },
   browser: {
     title: "Browser",
     description: "There's no embedded browser or web-browsing capability inside Omnira yet.",

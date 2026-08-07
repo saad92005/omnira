@@ -1,4 +1,4 @@
-import { BrainCircuit, Download, Globe, ListChecks, Mic2, ScrollText, ServerCog, Terminal, Zap } from "lucide-react";
+import { Bot, BrainCircuit, Download, Globe, ListChecks, Mic2, ScrollText, ServerCog, Terminal, Zap } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
 import { MessageBubble, TypingIndicator, WidgetCard, useTilt3D } from "@omnira/ui-kit";
 import type { LogEntry } from "../hooks/useEventLog.js";
@@ -21,13 +21,13 @@ export interface RightPanelProps {
   online: boolean;
   micActive: boolean;
   logEntries: LogEntry[];
+  activeAgentLabel: string;
 }
 
 const AGENT_PLACEHOLDERS = [
   { icon: <ListChecks size={12} strokeWidth={2} />, label: "Exec. queue" },
   { icon: <ServerCog size={12} strokeWidth={2} />, label: "Processes" },
   { icon: <Zap size={12} strokeWidth={2} />, label: "Tokens/sec" },
-  { icon: <BrainCircuit size={12} strokeWidth={2} />, label: "Current agent" },
 ];
 
 export function RightPanel({
@@ -41,6 +41,7 @@ export function RightPanel({
   online,
   micActive,
   logEntries,
+  activeAgentLabel,
 }: RightPanelProps): ReactNode {
   const commLogTilt = useTilt3D<HTMLDivElement>(3);
 
@@ -121,6 +122,11 @@ export function RightPanel({
             <Terminal size={11} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
             Groq · Llama 3.3
+          </span>
+          <span className="omnira-hud-indicator" data-active="true" title="The active agent persona">
+            <Bot size={11} strokeWidth={2} aria-hidden="true" />
+            <span className="omnira-hud-indicator__dot" aria-hidden="true" />
+            {activeAgentLabel}
           </span>
         </div>
       </WidgetCard>

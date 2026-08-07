@@ -68,6 +68,11 @@ export class ChatAgent {
     private readonly provider: ModelProvider,
     private readonly logger: Logger,
     private readonly tools: ToolHandler[] = [],
+    /** An optional addition layered on top of SYSTEM_PROMPT, never a replacement
+        for it — the language/tool-confirmation/TTS-brevity rules always apply
+        regardless of persona. Callers (apps/api) resolve a persona id to this
+        string; ChatAgent itself stays persona-agnostic. */
+    private readonly personaPrompt?: string,
   ) {}
 
   async respond(
@@ -78,10 +83,11 @@ export class ChatAgent {
     state.addUserTurn(userMessage);
     const startedAt = Date.now();
     const clientActions: ClientAction[] = [];
+    const systemContent = this.personaPrompt ? `${SYSTEM_PROMPT}\n\n${this.personaPrompt}` : SYSTEM_PROMPT;
 
     try {
       const result = await this.provider.generateReply(
-        [{ role: "system", content: SYSTEM_PROMPT }, ...state.toChatMessages()],
+        [{ role: "system", content: systemContent }, ...state.toChatMessages()],
         onDelta ?? (() => {}),
         this.tools.length > 0
           ? { tools: this.tools.map((t) => t.definition), executeTool: (call) => this.executeTool(call, clientActions) }

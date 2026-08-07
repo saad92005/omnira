@@ -85,8 +85,20 @@ export interface ClientAction {
 export async function sendChatMessage(
   message: string,
   conversationId?: string,
+  agentId?: string,
 ): Promise<{ conversationId: string; reply: string; clientActions: ClientAction[] }> {
-  return request("/chat", { method: "POST", body: JSON.stringify({ message, conversationId }) });
+  return request("/chat", { method: "POST", body: JSON.stringify({ message, conversationId, agentId }) });
+}
+
+export interface AgentPersonaSummary {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export async function getAgents(): Promise<AgentPersonaSummary[]> {
+  const result = await request<{ agents: AgentPersonaSummary[] }>("/agents");
+  return result.agents;
 }
 
 export async function isVoiceAvailable(): Promise<boolean> {

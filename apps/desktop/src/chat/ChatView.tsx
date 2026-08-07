@@ -5,6 +5,7 @@ import {
   ApiError,
   clearTokens,
   getActiveCapabilities,
+  getAgents,
   getConversationMessages,
   getNewsHeadlines,
   grantMicrophonePermission,
@@ -14,6 +15,7 @@ import {
   revokeMicrophonePermission,
   sendChatMessage,
   transcribeAudio,
+  type AgentPersonaSummary,
   type ConversationSummary,
   type NewsHeadline,
 } from "../api-client.js";
@@ -37,6 +39,7 @@ interface DisplayMessage {
 }
 
 const VOICE_MODE_KEY = "omnira.voiceMode";
+const AGENT_ID_KEY = "omnira.agentId";
 
 const STATE_TEXT: Record<VoiceState | "idle", string> = {
   idle: "Idle",
@@ -64,6 +67,8 @@ export function ChatView(): ReactNode {
   const [headlines, setHeadlines] = useState<NewsHeadline[]>([]);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
   const [activeModule, setActiveModule] = useState<string | null>(null);
+  const [agents, setAgents] = useState<AgentPersonaSummary[]>([]);
+  const [agentId, setAgentId] = useState(() => localStorage.getItem(AGENT_ID_KEY) ?? "general");
 
   const recorder = useVoiceRecorder();
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
@@ -114,6 +119,9 @@ export function ChatView(): ReactNode {
         setHeadlines(list);
         log(`Fetched ${list.length} headlines`);
       })
+      .catch(() => undefined);
+    getAgents()
+      .then(setAgents)
       .catch(() => undefined);
   }, [refreshConversations, log]);
 
@@ -191,6 +199,13 @@ export function ChatView(): ReactNode {
     setActiveModule(id);
   }
 
+  function handleSelectAgent(id: string): void {
+    setAgentId(id);
+    localStorage.setItem(AGENT_ID_KEY, id);
+    const label = agents.find((a) => a.id === id)?.label ?? id;
+    log(`Agent switched to ${label}`);
+  }
+
   async function handleGrantMic(): Promise<void> {
     await grantMicrophonePermission();
     setMicGranted(true);
@@ -224,7 +239,7 @@ export function ChatView(): ReactNode {
       setInput("");
       setSending(true);
       try {
-        const result = await sendChatMessage(text, conversationId);
+        const result = await sendChatMessage(text, conversationId, agentId);
         setConversationId(result.conversationId);
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", text: result.reply }]);
         refreshConversations();
@@ -243,7 +258,7 @@ export function ChatView(): ReactNode {
         inputRef.current?.focus();
       }
     },
-    [conversationId, refreshConversations, log],
+    [conversationId, agentId, refreshConversations, log],
   );
 
   const handleAutomationRun = useCallback(
@@ -443,6 +458,7 @@ export function ChatView(): ReactNode {
           online={online}
           micActive={voiceState === VoiceState.Listening}
           logEntries={logEntries}
+          activeAgentLabel={agents.find((a) => a.id === agentId)?.label ?? "General"}
         />
       </div>
 
@@ -486,6 +502,9 @@ export function ChatView(): ReactNode {
         addAutomation={addAutomation}
         removeAutomation={removeAutomation}
         toggleAutomation={toggleAutomation}
+        agents={agents}
+        activeAgentId={agentId}
+        onSelectAgent={handleSelectAgent}
       />
     </div>
   );

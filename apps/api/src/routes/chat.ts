@@ -7,10 +7,12 @@ import type { PermissionsService } from "../permissions/service.js";
 import type { ConversationsService } from "../conversations/service.js";
 import { buildToolHandlers } from "../tools/index.js";
 import { requireAuth } from "../http/authenticate.js";
+import { resolvePersonaPrompt } from "../agents/personas.js";
 
 const chatRequestSchema = z.object({
   conversationId: z.string().uuid().optional(),
   message: z.string().min(1).max(8000),
+  agentId: z.string().optional(),
 });
 
 export function registerChatRoutes(
@@ -27,7 +29,7 @@ export function registerChatRoutes(
     if (!parsed.success) throw new ValidationError("Invalid chat request", { issues: parsed.error.issues });
 
     const userId = request.userId as string;
-    const { conversationId, message } = parsed.data;
+    const { conversationId, message, agentId } = parsed.data;
 
     const state = await conversationsService.loadOrCreate(userId, conversationId);
 
@@ -41,7 +43,7 @@ export function registerChatRoutes(
     const systemControlGranted =
       config.SYSTEM_CONTROL_AVAILABLE && (await permissionsService.isActive(userId, Capability.SystemControl));
     const provider = new GroqProvider({ apiKey: config.GROQ_API_KEY });
-    const agent = new ChatAgent(provider, logger, buildToolHandlers(systemControlGranted));
+    const agent = new ChatAgent(provider, logger, buildToolHandlers(systemControlGranted), resolvePersonaPrompt(agentId));
     const result = await agent.respond(state, message);
 
     await conversationsService.recordTurn(state.id, message, result.reply);
