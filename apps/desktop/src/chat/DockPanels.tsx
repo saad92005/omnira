@@ -17,12 +17,12 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@omnira/ui-kit";
 import type { ConversationSummary } from "../api-client.js";
 import { MODULE_INFO } from "./dockModules.js";
+import { FilesPanel } from "./FilesPanel.js";
 import { ModulePanel } from "./ModulePanel.js";
 
 const MODULE_ICONS: Record<string, LucideIcon> = {
   agents: Bot,
   browser: Globe,
-  files: FolderOpen,
   terminal: Terminal,
   automation: Workflow,
   analytics: ChartBar,
@@ -101,6 +101,14 @@ export function DockPanels({
             ))}
           </div>
         )}
+      </ModulePanel>
+    );
+  }
+
+  if (activeModule === "files") {
+    return (
+      <ModulePanel title="Files" icon={<FolderOpen size={18} strokeWidth={2} />} onClose={onClose}>
+        <FilesPanel />
       </ModulePanel>
     );
   }

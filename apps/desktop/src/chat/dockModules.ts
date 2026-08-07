@@ -23,10 +23,6 @@ export const MODULE_INFO: Record<string, ModuleInfo> = {
     description: "There's no embedded browser or web-browsing capability inside Omnira yet.",
     related: "With System Control permission granted, Omnira can open a URL in your default browser when you ask it to in chat.",
   },
-  files: {
-    title: "Files",
-    description: "Omnira can't list, browse, or open your local files from here yet.",
-  },
   terminal: {
     title: "Terminal",
     description: "There's no terminal or shell access wired up in this build.",

@@ -1,0 +1,31 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Read-only filesystem listing of a fixed set of user folders (Desktop, Documents, Downloads, Home), plus opening a file/folder with the OS default handler — backs the Files dock panel. No write access from this surface; the existing chat-driven create-file/create-folder tool (apps/api) is a separate, already-scoped path.",
+  "windows": ["main"],
+  "permissions": [
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [
+        { "path": "$DESKTOP" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENT" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DOWNLOAD" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$HOME" },
+        { "path": "$HOME/*" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$HOME/*" }
+      ]
+    },
+    "opener:allow-open-path"
+  ]
+}
