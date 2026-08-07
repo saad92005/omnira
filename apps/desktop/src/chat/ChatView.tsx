@@ -68,6 +68,7 @@ export function ChatView(): ReactNode {
   const [lastCommand, setLastCommand] = useState<string | null>(null);
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [agents, setAgents] = useState<AgentPersonaSummary[]>([]);
+  const [agentsLoaded, setAgentsLoaded] = useState(false);
   const [agentId, setAgentId] = useState(() => localStorage.getItem(AGENT_ID_KEY) ?? "general");
 
   const recorder = useVoiceRecorder();
@@ -122,7 +123,8 @@ export function ChatView(): ReactNode {
       .catch(() => undefined);
     getAgents()
       .then(setAgents)
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setAgentsLoaded(true));
   }, [refreshConversations, log]);
 
   useEffect(() => {
@@ -503,6 +505,7 @@ export function ChatView(): ReactNode {
         removeAutomation={removeAutomation}
         toggleAutomation={toggleAutomation}
         agents={agents}
+        agentsLoaded={agentsLoaded}
         activeAgentId={agentId}
         onSelectAgent={handleSelectAgent}
       />

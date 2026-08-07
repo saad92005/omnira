@@ -45,6 +45,7 @@ export interface DockPanelsProps extends UseAutomationsResult {
   onGrantSystemControl: () => Promise<void>;
   onSignOut: () => void;
   agents: AgentPersonaSummary[];
+  agentsLoaded: boolean;
   activeAgentId: string;
   onSelectAgent: (id: string) => void;
 }
@@ -67,6 +68,7 @@ export function DockPanels({
   removeAutomation,
   toggleAutomation,
   agents,
+  agentsLoaded,
   activeAgentId,
   onSelectAgent,
 }: DockPanelsProps): ReactNode {
@@ -138,7 +140,7 @@ export function DockPanels({
   if (activeModule === "agents") {
     return (
       <ModulePanel title="Agents" icon={<Bot size={18} strokeWidth={2} />} onClose={onClose}>
-        <AgentsPanel agents={agents} activeAgentId={activeAgentId} onSelect={onSelectAgent} />
+        <AgentsPanel agents={agents} agentsLoaded={agentsLoaded} activeAgentId={activeAgentId} onSelect={onSelectAgent} />
       </ModulePanel>
     );
   }

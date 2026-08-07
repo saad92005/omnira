@@ -4,6 +4,7 @@ import type { AgentPersonaSummary } from "../api-client.js";
 
 export interface AgentsPanelProps {
   agents: AgentPersonaSummary[];
+  agentsLoaded: boolean;
   activeAgentId: string;
   onSelect: (id: string) => void;
 }
@@ -16,7 +17,12 @@ export interface AgentsPanelProps {
  * one genuinely changes the system prompt for your next message, verifiable
  * by the different reply style — not a fabricated "3 agents active" gauge.
  */
-export function AgentsPanel({ agents, activeAgentId, onSelect }: AgentsPanelProps): ReactNode {
+export function AgentsPanel({ agents, agentsLoaded, activeAgentId, onSelect }: AgentsPanelProps): ReactNode {
+  if (!agentsLoaded) {
+    return (
+      <p style={{ margin: 0, color: "var(--omnira-text-secondary)", fontSize: "12px" }}>Loading agents…</p>
+    );
+  }
   if (agents.length === 0) {
     return (
       <p style={{ margin: 0, color: "var(--omnira-text-secondary)", fontSize: "12px" }}>
