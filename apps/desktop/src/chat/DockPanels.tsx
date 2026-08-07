@@ -19,11 +19,11 @@ import type { ConversationSummary } from "../api-client.js";
 import { MODULE_INFO } from "./dockModules.js";
 import { FilesPanel } from "./FilesPanel.js";
 import { ModulePanel } from "./ModulePanel.js";
+import { TerminalPanel } from "./TerminalPanel.js";
 
 const MODULE_ICONS: Record<string, LucideIcon> = {
   agents: Bot,
   browser: Globe,
-  terminal: Terminal,
   automation: Workflow,
   analytics: ChartBar,
   music: Music2,
@@ -109,6 +109,17 @@ export function DockPanels({
     return (
       <ModulePanel title="Files" icon={<FolderOpen size={18} strokeWidth={2} />} onClose={onClose}>
         <FilesPanel />
+      </ModulePanel>
+    );
+  }
+
+  if (activeModule === "terminal") {
+    return (
+      <ModulePanel title="Terminal" icon={<Terminal size={18} strokeWidth={2} />} onClose={onClose}>
+        <p style={{ margin: 0, fontSize: "12px", color: "var(--omnira-text-secondary)" }}>
+          A fixed set of read-only diagnostic commands — no free-text/arbitrary shell access.
+        </p>
+        <TerminalPanel />
       </ModulePanel>
     );
   }

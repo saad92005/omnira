@@ -17,6 +17,7 @@
     "@tauri-apps/api": "catalog:",
     "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2.5.4",
+    "@tauri-apps/plugin-shell": "^2.3.5",
     "lucide-react": "^1.29.0",
     "react": "catalog:",
     "react-dom": "catalog:"

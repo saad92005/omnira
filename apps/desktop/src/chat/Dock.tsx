@@ -47,7 +47,7 @@ const ITEMS: DockItem[] = [
 // Backed by real, working functionality — everything else opens an honest
 // "not connected yet" info panel instead (see dockModules.ts), but every
 // icon here responds to a click; none are dead buttons.
-const REAL_FEATURE = new Set(["chat", "voice", "dashboard", "memory", "settings", "files"]);
+const REAL_FEATURE = new Set(["chat", "voice", "dashboard", "memory", "settings", "files", "terminal"]);
 
 /**
  * A macOS-style rounded glass dock. Every icon is interactive — the ones

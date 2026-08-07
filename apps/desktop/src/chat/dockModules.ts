@@ -23,11 +23,6 @@ export const MODULE_INFO: Record<string, ModuleInfo> = {
     description: "There's no embedded browser or web-browsing capability inside Omnira yet.",
     related: "With System Control permission granted, Omnira can open a URL in your default browser when you ask it to in chat.",
   },
-  terminal: {
-    title: "Terminal",
-    description: "There's no terminal or shell access wired up in this build.",
-    related: "System Control permission lets Omnira open a small allow-listed set of known apps (like Notepad or File Explorer) — not arbitrary commands.",
-  },
   automation: {
     title: "Automation",
     description: "There's no workflow-automation or task-scheduling engine yet.",
