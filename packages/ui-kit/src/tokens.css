@@ -99,10 +99,16 @@
 }
 
 :root {
-  --omnira-font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --omnira-font-heading: "Space Grotesk", var(--omnira-font-sans);
-  --omnira-font-display: "Orbitron", var(--omnira-font-heading);
-  --omnira-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  /* The OS's own native UI font, not a bundled webfont — Segoe UI
+     (Variable) on Windows, San Francisco on macOS, Roboto on
+     Android/ChromeOS/most Linux desktops, with system-ui as the generic
+     catch-all. One family for the whole app, differentiated by weight —
+     the "professional dashboard" convention (VS Code, Notion, Linear),
+     not a decorative display font for headings. */
+  --omnira-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
+  --omnira-font-heading: var(--omnira-font-sans);
+  --omnira-font-display: var(--omnira-font-sans);
+  --omnira-font-mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --omnira-text-xs: 12px;
   --omnira-text-sm: 14px;
@@ -445,6 +451,15 @@ h1, h2, h3, h4 {
   animation: omnira-orb-spin-reverse 9s linear infinite;
 }
 
+/* A biological double-beat ("lub-dub") rather than a smooth sine pulse —
+   two quick scale-ups close together, then a longer rest, on a loop. */
+@keyframes omnira-heartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.06); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.09); }
+  65% { transform: scale(1); }
+}
 .omnira-orb__core {
   position: absolute;
   inset: 7px;
@@ -461,7 +476,12 @@ h1, h2, h3, h4 {
   color: var(--omnira-text-primary);
   box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.08);
   transition: color var(--omnira-transition-state);
+  animation: omnira-heartbeat 1.6s ease-in-out infinite;
 }
+.omnira-orb[data-state="listening"] .omnira-orb__core,
+.omnira-orb[data-state="thinking"] .omnira-orb__core { animation-duration: 0.95s; }
+.omnira-orb[data-state="speaking"] .omnira-orb__core { animation-duration: 0.75s; }
+.omnira-orb[data-disabled="true"] .omnira-orb__core { animation-play-state: paused; }
 
 .omnira-orb__scan {
   position: absolute;
@@ -1385,6 +1405,37 @@ h1, h2, h3, h4 {
   box-shadow: 0 0 8px var(--omnira-success);
 }
 
+.omnira-nerve-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.omnira-nerve-path {
+  fill: none;
+  stroke: url(#omnira-nerve-grad);
+  stroke-width: 2px;
+  stroke-linecap: round;
+  opacity: 0.28;
+  stroke-dasharray: 5 15;
+  animation: omnira-nerve-flow 2.4s linear infinite;
+}
+.omnira-nerve-path--secondary {
+  stroke-width: 1.2px;
+  opacity: 0.14;
+}
+@keyframes omnira-nerve-flow {
+  to { stroke-dashoffset: -200; }
+}
+.omnira-nerve-pulse {
+  fill: var(--omnira-cyan);
+}
+@media (max-width: 1100px) {
+  .omnira-nerve-field { display: none; }
+}
+
 .omnira-hud-shell {
   position: relative;
   z-index: 1;
@@ -1613,6 +1664,9 @@ h1, h2, h3, h4 {
   .omnira-orb__scan,
   .omnira-orb__pulsering,
   .omnira-orb__particle-orbit,
+  .omnira-orb__core,
+  .omnira-nerve-path,
+  .omnira-nerve-pulse,
   .omnira-btn__ripple,
   .omnira-widget::after,
   .omnira-modal,

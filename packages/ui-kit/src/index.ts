@@ -13,6 +13,8 @@ export { AuroraBackground } from "./AuroraBackground.js";
 
 export { CursorGlow } from "./CursorGlow.js";
 
+export { NerveField } from "./NerveField.js";
+
 export { WidgetCard } from "./WidgetCard.js";
 export type { WidgetCardProps } from "./WidgetCard.js";
 

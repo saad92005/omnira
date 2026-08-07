@@ -1,15 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/space-grotesk/500.css";
-import "@fontsource/space-grotesk/600.css";
-import "@fontsource/space-grotesk/700.css";
-import "@fontsource/orbitron/500.css";
-import "@fontsource/orbitron/700.css";
 import "@omnira/ui-kit/tokens.css";
 import { App } from "./App.js";
+
+// Typography is the OS's own native UI font (system-ui / Segoe UI / San
+// Francisco / Roboto, per platform — see --omnira-font-sans in tokens.css)
+// rather than a bundled webfont, so no font imports here: nothing to load,
+// nothing that can look "off-brand" from the rest of the user's system.
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element #root was not found");

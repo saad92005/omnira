@@ -1,6 +1,6 @@
 import { Send, ShieldCheck, Terminal, Wifi } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Button, MicButton, VoiceState } from "@omnira/ui-kit";
+import { Button, MicButton, NerveField, VoiceState } from "@omnira/ui-kit";
 import {
   ApiError,
   clearTokens,
@@ -346,6 +346,8 @@ export function ChatView(): ReactNode {
 
   return (
     <div className="omnira-hud-shell">
+      <NerveField />
+
       <header className="omnira-hud-topbar omnira-glass omnira-hud-panel omnira-boot-topbar" style={headerStyle}>
         <h1
           className="omnira-gradient-text"
