@@ -1,18 +1,6 @@
-import {
-  Cloud,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  Download,
-  Mic2,
-  Send,
-  ShieldCheck,
-  Sun,
-  Wifi,
-} from "lucide-react";
+import { Send, ShieldCheck, Terminal, Wifi } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Button, MessageBubble, MicButton, TypingIndicator, VoiceState, useTilt3D } from "@omnira/ui-kit";
+import { Button, MicButton, VoiceState } from "@omnira/ui-kit";
 import {
   ApiError,
   getActiveCapabilities,
@@ -26,10 +14,14 @@ import {
   type NewsHeadline,
 } from "../api-client.js";
 import { runClientAction } from "../client-actions.js";
+import { useEventLog } from "../hooks/useEventLog.js";
+import { useMicLevelMeter } from "../hooks/useMicLevelMeter.js";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder.js";
 import { speak } from "../speech.js";
 import { getCurrentWeather, type CurrentWeather } from "../weather.js";
-import { ConversationSidebar } from "./ConversationSidebar.js";
+import { Dock } from "./Dock.js";
+import { LeftSidebar } from "./LeftSidebar.js";
+import { RightPanel } from "./RightPanel.js";
 
 interface DisplayMessage {
   id: string;
@@ -40,23 +32,12 @@ interface DisplayMessage {
 const VOICE_MODE_KEY = "omnira.voiceMode";
 
 const STATE_TEXT: Record<VoiceState | "idle", string> = {
-  idle: "Hold the core to talk",
+  idle: "Idle",
   [VoiceState.Listening]: "Listening…",
   [VoiceState.Thinking]: "Thinking…",
   [VoiceState.Speaking]: "Speaking…",
   [VoiceState.AwaitingConfirmation]: "Awaiting confirmation…",
 };
-
-/** Maps Open-Meteo's WMO weather codes to a representative icon. */
-function weatherIcon(code: number): typeof Sun {
-  if (code === 0 || code === 1) return Sun;
-  if (code === 2 || code === 3) return Cloud;
-  if (code === 45 || code === 48) return CloudFog;
-  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return CloudRain;
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return CloudSnow;
-  if (code >= 95) return CloudLightning;
-  return Cloud;
-}
 
 export function ChatView(): ReactNode {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -68,16 +49,29 @@ export function ChatView(): ReactNode {
   const [micGranted, setMicGranted] = useState(false);
   const [systemControlGranted, setSystemControlGranted] = useState(false);
   const [apiReachable, setApiReachable] = useState(true);
+  const [online, setOnline] = useState(() => navigator.onLine);
   const [voiceState, setVoiceState] = useState<VoiceState | "idle">("idle");
   const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem(VOICE_MODE_KEY) === "true");
   const [now, setNow] = useState(() => new Date());
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
   const [headlines, setHeadlines] = useState<NewsHeadline[]>([]);
+  const [lastCommand, setLastCommand] = useState<string | null>(null);
 
   const recorder = useVoiceRecorder();
-  const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const commLogTilt = useTilt3D<HTMLDivElement>(3);
+  const orbWrapRef = useRef<HTMLDivElement | null>(null);
+  const { entries: logEntries, log } = useEventLog();
+  const didLogBoot = useRef(false);
+
+  // Real mic input level (Web Audio analyser on the actual recording
+  // stream), written straight to a CSS custom property via ref rather than
+  // React state — the glow can react at animation-frame rate without
+  // forcing a re-render on every frame.
+  const handleMicLevel = useCallback((level: number) => {
+    orbWrapRef.current?.style.setProperty("--omnira-mic-level", String(level));
+  }, []);
+  useMicLevelMeter(recorder.stream, handleMicLevel);
 
   const refreshConversations = useCallback(() => {
     listConversations()
@@ -89,8 +83,15 @@ export function ChatView(): ReactNode {
   }, []);
 
   useEffect(() => {
+    if (didLogBoot.current) return;
+    didLogBoot.current = true;
+    log("Omnira online");
+
     isVoiceAvailable()
-      .then(setMicGranted)
+      .then((granted) => {
+        setMicGranted(granted);
+        if (granted) log("Microphone access granted", "success");
+      })
       .catch(() => setMicGranted(false));
     getActiveCapabilities()
       .then((active) => setSystemControlGranted(active.has("system_control")))
@@ -101,14 +102,34 @@ export function ChatView(): ReactNode {
     // this ambient.
     getCurrentWeather().then(setWeather);
     getNewsHeadlines()
-      .then(setHeadlines)
+      .then((list) => {
+        setHeadlines(list);
+        log(`Fetched ${list.length} headlines`);
+      })
       .catch(() => undefined);
-  }, [refreshConversations]);
+  }, [refreshConversations, log]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    function goOnline(): void {
+      setOnline(true);
+      log("Internet connection restored", "success");
+    }
+    function goOffline(): void {
+      setOnline(false);
+      log("Internet connection lost", "warning");
+    }
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, [log]);
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -145,6 +166,7 @@ export function ChatView(): ReactNode {
     setVoiceMode((prev) => {
       const next = !prev;
       localStorage.setItem(VOICE_MODE_KEY, String(next));
+      log(`Voice mode ${next ? "enabled" : "disabled"}`);
       return next;
     });
   }
@@ -153,6 +175,8 @@ export function ChatView(): ReactNode {
     async (text: string) => {
       if (!text.trim()) return undefined;
       setError(null);
+      setLastCommand(text);
+      log(`You: ${text}`);
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", text }]);
       setInput("");
       setSending(true);
@@ -162,9 +186,12 @@ export function ChatView(): ReactNode {
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", text: result.reply }]);
         refreshConversations();
         result.clientActions.forEach((action) => void runClientAction(action));
+        log("Omnira replied", "success");
         return result.reply;
       } catch (err) {
-        setError(err instanceof ApiError ? err.message : "Could not reach Omnira. Check your connection.");
+        const message = err instanceof ApiError ? err.message : "Could not reach Omnira. Check your connection.";
+        setError(message);
+        log(message, "error");
         return undefined;
       } finally {
         setSending(false);
@@ -173,7 +200,7 @@ export function ChatView(): ReactNode {
         inputRef.current?.focus();
       }
     },
-    [conversationId, refreshConversations],
+    [conversationId, refreshConversations, log],
   );
 
   async function speakReply(text: string): Promise<void> {
@@ -204,6 +231,7 @@ export function ChatView(): ReactNode {
     link.download = `omnira-conversation-${new Date().toISOString().slice(0, 10)}.md`;
     link.click();
     URL.revokeObjectURL(url);
+    log("Exported conversation as Markdown");
   }
 
   function handleNewChat(): void {
@@ -211,7 +239,9 @@ export function ChatView(): ReactNode {
     setMessages([]);
     setInput("");
     setError(null);
+    setLastCommand(null);
     inputRef.current?.focus();
+    log("Started a new chat");
   }
 
   async function handleSelectConversation(id: string): Promise<void> {
@@ -222,6 +252,7 @@ export function ChatView(): ReactNode {
       setMessages(history.map((m) => ({ id: crypto.randomUUID(), role: m.role, text: m.content })));
       setConversationId(id);
       inputRef.current?.focus();
+      log("Loaded conversation");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not load that conversation.");
     }
@@ -238,6 +269,7 @@ export function ChatView(): ReactNode {
           ? `Could not access the microphone: ${err.message}`
           : "Could not access the microphone.";
       setError(message);
+      log(message, "error");
       setVoiceState("idle");
     }
   }
@@ -266,77 +298,59 @@ export function ChatView(): ReactNode {
       const message =
         err instanceof ApiError || err instanceof Error ? err.message : "Could not transcribe that. Try again.";
       setError(message);
+      log(message, "error");
       setVoiceState("idle");
     }
   }
 
   return (
     <div className="omnira-hud-shell">
-      <div className="omnira-hud-grid" aria-hidden="true" />
-
       <header className="omnira-hud-topbar omnira-glass omnira-hud-panel omnira-boot-topbar" style={headerStyle}>
-        <h1 className="omnira-gradient-text" style={{ fontSize: "var(--omnira-text-lg)", fontWeight: 700, margin: 0 }}>
+        <h1
+          className="omnira-gradient-text"
+          style={{ fontFamily: "var(--omnira-font-display)", fontSize: "var(--omnira-text-lg)", fontWeight: 700, margin: 0, letterSpacing: "0.06em" }}
+        >
           OMNIRA
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--omnira-space-4)" }}>
-          <span className="omnira-hud-indicator" data-active={micGranted}>
-            <Mic2 size={12} strokeWidth={2} aria-hidden="true" />
+          <span className="omnira-hud-indicator" data-active="true">
+            <Terminal size={12} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
-            Mic
+            Groq · Llama 3.3
           </span>
           <span className="omnira-hud-indicator" data-active={systemControlGranted}>
             <ShieldCheck size={12} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
             Sys
           </span>
-          <span className="omnira-hud-indicator" data-active={apiReachable}>
+          <span className="omnira-hud-indicator" data-active={apiReachable && online}>
             <Wifi size={12} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
             Net
           </span>
-          {weather && (
-            <span
-              className="omnira-hud-indicator"
-              data-active="true"
-              title={weather.label}
-            >
-              {(() => {
-                const WeatherIcon = weatherIcon(weather.code);
-                return <WeatherIcon size={13} strokeWidth={2} aria-hidden="true" />;
-              })()}
-              {weather.temperatureC}°C
-            </span>
-          )}
           <span className="omnira-hud-value" style={{ fontSize: "var(--omnira-text-sm)" }}>
-            {now.toLocaleTimeString()}
+            {now.toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {now.toLocaleTimeString()}
           </span>
-          <button
-            type="button"
-            className="omnira-hud-switch"
-            data-on={voiceMode}
-            onClick={toggleVoiceMode}
-            aria-pressed={voiceMode}
-          >
-            Voice mode
-            <span className="omnira-hud-switch__track" aria-hidden="true">
-              <span className="omnira-hud-switch__thumb" />
-            </span>
-          </button>
         </div>
       </header>
 
       <div className="omnira-hud-sidebar omnira-boot-sidebar">
-        <ConversationSidebar
+        <LeftSidebar
           conversations={conversations}
           activeConversationId={conversationId}
           onSelect={(id) => void handleSelectConversation(id)}
           onNewChat={handleNewChat}
           headlines={headlines}
+          weather={weather}
+          voiceMode={voiceMode}
+          onToggleVoiceMode={toggleVoiceMode}
+          onExportConversation={handleExportConversation}
+          hasMessages={messages.length > 0}
         />
       </div>
 
       <div className="omnira-hud-center" style={centerStyle}>
-        <div className="omnira-boot-center" style={{ position: "relative", display: "inline-flex" }}>
+        <div ref={orbWrapRef} className="omnira-boot-center" style={{ position: "relative", display: "inline-flex" }}>
           <span className="omnira-hud-radar" aria-hidden="true" />
           <MicButton
             state={voiceState}
@@ -347,7 +361,10 @@ export function ChatView(): ReactNode {
             onPressEnd={() => void handleMicPressEnd()}
           />
         </div>
-        <p className="omnira-hud-label" style={{ marginTop: "var(--omnira-space-4)" }}>
+        <p
+          className="omnira-hud-label"
+          style={{ marginTop: "var(--omnira-space-4)", fontFamily: "var(--omnira-font-heading)", fontSize: "var(--omnira-text-base)", textTransform: "none", letterSpacing: "normal", color: "var(--omnira-text-primary)" }}
+        >
           {STATE_TEXT[voiceState]}
         </p>
         <p className="omnira-boot-text" style={{ margin: 0, height: 16 }} aria-hidden="true">
@@ -360,49 +377,19 @@ export function ChatView(): ReactNode {
         )}
       </div>
 
-      <div
-        ref={commLogTilt.ref}
-        onPointerMove={commLogTilt.onPointerMove}
-        onPointerLeave={commLogTilt.onPointerLeave}
-        className="omnira-hud-commlog omnira-glass omnira-hud-panel omnira-tilt-3d omnira-boot-commlog"
-        style={commLogStyle}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <p className="omnira-hud-label" style={{ margin: 0 }}>
-            Comm log
-          </p>
-          {messages.length > 0 && (
-            <button
-              type="button"
-              onClick={handleExportConversation}
-              className="omnira-hud-label"
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--omnira-accent-2)",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-              title="Download this conversation as a Markdown file"
-            >
-              <Download size={13} strokeWidth={2} /> Export
-            </button>
-          )}
-        </div>
-        {messages.length === 0 && !sending && (
-          <p style={{ color: "var(--omnira-text-secondary)", fontSize: "var(--omnira-text-sm)" }}>
-            Say hello, or hold the core to talk.
-          </p>
-        )}
-        {messages.map((m) => (
-          <MessageBubble key={m.id} role={m.role}>
-            {m.text}
-          </MessageBubble>
-        ))}
-        {sending && <TypingIndicator />}
-        <div ref={scrollAnchorRef} />
+      <div className="omnira-hud-right omnira-boot-commlog">
+        <RightPanel
+          messages={messages}
+          sending={sending}
+          scrollAnchorRef={scrollAnchorRef}
+          onExportConversation={handleExportConversation}
+          aiStatusLabel={STATE_TEXT[voiceState]}
+          currentCommand={lastCommand}
+          apiReachable={apiReachable}
+          online={online}
+          micActive={voiceState === VoiceState.Listening}
+          logEntries={logEntries}
+        />
       </div>
 
       <form onSubmit={handleSubmit} className="omnira-hud-console omnira-glass omnira-hud-panel omnira-boot-console" style={consoleStyle}>
@@ -423,6 +410,10 @@ export function ChatView(): ReactNode {
           </span>
         </Button>
       </form>
+
+      <div className="omnira-hud-dock">
+        <Dock voiceMode={voiceMode} onToggleVoiceMode={toggleVoiceMode} />
+      </div>
     </div>
   );
 }
@@ -440,14 +431,6 @@ const centerStyle = {
   alignItems: "center",
   justifyContent: "center",
   gap: "var(--omnira-space-2)",
-} as const;
-
-const commLogStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "var(--omnira-space-3)",
-  padding: "var(--omnira-space-3) var(--omnira-space-4)",
-  overflowY: "auto",
 } as const;
 
 const consoleStyle = {

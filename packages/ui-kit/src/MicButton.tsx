@@ -75,6 +75,16 @@ export function MicButton({
     >
       {size === "lg" && (
         <>
+          <span className="omnira-orb__particle-orbit omnira-orb__particle-orbit--1" aria-hidden="true">
+            <span />
+          </span>
+          <span className="omnira-orb__particle-orbit omnira-orb__particle-orbit--2" aria-hidden="true">
+            <span />
+          </span>
+          <span className="omnira-orb__particle-orbit omnira-orb__particle-orbit--3" aria-hidden="true">
+            <span />
+          </span>
+          <span className="omnira-orb__pulsering" aria-hidden="true" />
           <span className="omnira-orb__ticks" aria-hidden="true" />
           <span className="omnira-orb__ring3d omnira-orb__ring3d--a" aria-hidden="true" />
           <span className="omnira-orb__ring3d omnira-orb__ring3d--b" aria-hidden="true" />

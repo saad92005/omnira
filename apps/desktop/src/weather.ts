@@ -4,6 +4,9 @@ export interface CurrentWeather {
   /** WMO weather code, in case a caller wants a different mapping than `label`. */
   code: number;
   isDay: boolean;
+  /** Real hourly forecast temperatures (°C) for the rest of today, from the
+      same Open-Meteo response — never interpolated or invented client-side. */
+  hourlyTemperaturesC: number[];
 }
 
 /**
@@ -64,6 +67,8 @@ export async function getCurrentWeather(): Promise<CurrentWeather | null> {
     url.searchParams.set("latitude", position.coords.latitude.toFixed(4));
     url.searchParams.set("longitude", position.coords.longitude.toFixed(4));
     url.searchParams.set("current", "temperature_2m,weather_code,is_day");
+    url.searchParams.set("hourly", "temperature_2m");
+    url.searchParams.set("forecast_days", "1");
     url.searchParams.set("temperature_unit", "celsius");
 
     const response = await fetch(url);
@@ -71,14 +76,21 @@ export async function getCurrentWeather(): Promise<CurrentWeather | null> {
 
     const body = (await response.json()) as {
       current?: { temperature_2m: number; weather_code: number; is_day: number };
+      hourly?: { time: string[]; temperature_2m: number[] };
     };
     if (!body.current) return null;
+
+    const nowHour = new Date().getHours();
+    const hourlyTemperaturesC = (body.hourly?.temperature_2m ?? [])
+      .slice(nowHour, nowHour + 8)
+      .map((t) => Math.round(t));
 
     return {
       temperatureC: Math.round(body.current.temperature_2m),
       code: body.current.weather_code,
       label: WEATHER_LABELS[body.current.weather_code] ?? "Unknown",
       isDay: body.current.is_day === 1,
+      hourlyTemperaturesC,
     };
   } catch {
     // Denied permission, no geolocation support, offline, etc. -- weather is

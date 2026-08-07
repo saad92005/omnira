@@ -31,56 +31,74 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --omnira-bg: #05050a;
-    --omnira-surface: #1e1e1e;
-    --omnira-surface-raised: #262626;
-    --omnira-border: #333333;
-    --omnira-text-primary: #f4f4f5;
-    --omnira-text-secondary: #a1a1aa;
-    --omnira-accent: #8080f0;
-    --omnira-accent-2: #22d3ee;
-    --omnira-accent-3: #e879f9;
-    --omnira-accent-contrast: #0b0b10;
+    --omnira-bg: #070b14;
+    --omnira-surface: #10152a;
+    --omnira-surface-raised: #131a2c;
+    --omnira-border: #1c2438;
+    --omnira-text-primary: #f4f6ff;
+    --omnira-text-secondary: #8b93ac;
+    --omnira-accent: #5b7cff;
+    --omnira-accent-2: #00e5ff;
+    --omnira-accent-3: #8b5cf6;
+    --omnira-accent-contrast: #04070d;
     --omnira-danger: #f87171;
     --omnira-success: #4ade80;
     --omnira-warning: #fbbf24;
 
-    --omnira-glass-bg: rgba(255, 255, 255, 0.05);
-    --omnira-glass-border: rgba(255, 255, 255, 0.09);
-    --omnira-glass-blur: 20px;
-    --omnira-glow-accent: 0 0 40px rgba(128, 128, 240, 0.35);
-    --omnira-aurora-a: rgba(128, 128, 240, 0.35);
-    --omnira-aurora-b: rgba(34, 211, 238, 0.28);
-    --omnira-aurora-c: rgba(232, 121, 249, 0.22);
+    --omnira-cyan: #00e5ff;
+    --omnira-blue: #5b7cff;
+    --omnira-purple: #8b5cf6;
+    --omnira-glow: #00ffff;
+
+    --omnira-glass-bg: rgba(18, 24, 40, 0.55);
+    --omnira-glass-border: rgba(0, 229, 255, 0.18);
+    --omnira-glass-blur: 22px;
+    --omnira-glow-accent: 0 0 40px rgba(0, 255, 255, 0.3);
+    --omnira-aurora-a: rgba(91, 124, 255, 0.32);
+    --omnira-aurora-b: rgba(0, 229, 255, 0.24);
+    --omnira-aurora-c: rgba(139, 92, 246, 0.26);
   }
 }
 
 :root[data-theme="dark"] {
-  --omnira-bg: #05050a;
-  --omnira-surface: #1e1e1e;
-  --omnira-surface-raised: #262626;
-  --omnira-border: #333333;
-  --omnira-text-primary: #f4f4f5;
-  --omnira-text-secondary: #a1a1aa;
-  --omnira-accent: #8080f0;
-  --omnira-accent-2: #22d3ee;
-  --omnira-accent-3: #e879f9;
-  --omnira-accent-contrast: #0b0b10;
+  /* v2 "Neuralink HUD" palette — electric cyan primary, blue secondary,
+     violet reserved for "AI reasoning" states, on a near-black navy field.
+     Named aliases (--omnira-cyan etc.) below exist alongside the semantic
+     --omnira-accent* names so new HUD-specific code can reach for the
+     literal color while the ~40 existing rules keyed to --omnira-accent*
+     keep working unchanged. */
+  --omnira-bg: #070b14;
+  --omnira-surface: #10152a;
+  --omnira-surface-raised: #131a2c;
+  --omnira-border: #1c2438;
+  --omnira-text-primary: #f4f6ff;
+  --omnira-text-secondary: #8b93ac;
+  --omnira-accent: #5b7cff;
+  --omnira-accent-2: #00e5ff;
+  --omnira-accent-3: #8b5cf6;
+  --omnira-accent-contrast: #04070d;
   --omnira-danger: #f87171;
   --omnira-success: #4ade80;
   --omnira-warning: #fbbf24;
 
-  --omnira-glass-bg: rgba(255, 255, 255, 0.05);
-  --omnira-glass-border: rgba(255, 255, 255, 0.09);
-  --omnira-glass-blur: 20px;
-  --omnira-glow-accent: 0 0 40px rgba(128, 128, 240, 0.35);
-  --omnira-aurora-a: rgba(128, 128, 240, 0.35);
-  --omnira-aurora-b: rgba(34, 211, 238, 0.28);
-  --omnira-aurora-c: rgba(232, 121, 249, 0.22);
+  --omnira-cyan: #00e5ff;
+  --omnira-blue: #5b7cff;
+  --omnira-purple: #8b5cf6;
+  --omnira-glow: #00ffff;
+
+  --omnira-glass-bg: rgba(18, 24, 40, 0.55);
+  --omnira-glass-border: rgba(0, 229, 255, 0.18);
+  --omnira-glass-blur: 22px;
+  --omnira-glow-accent: 0 0 40px rgba(0, 255, 255, 0.3);
+  --omnira-aurora-a: rgba(91, 124, 255, 0.32);
+  --omnira-aurora-b: rgba(0, 229, 255, 0.24);
+  --omnira-aurora-c: rgba(139, 92, 246, 0.26);
 }
 
 :root {
-  --omnira-font-sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --omnira-font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --omnira-font-heading: "Space Grotesk", var(--omnira-font-sans);
+  --omnira-font-display: "Orbitron", var(--omnira-font-heading);
   --omnira-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --omnira-text-xs: 12px;
@@ -88,6 +106,7 @@
   --omnira-text-base: 15px;
   --omnira-text-lg: 18px;
   --omnira-text-xl: 24px;
+  --omnira-text-2xl: 32px;
 
   --omnira-space-1: 4px;
   --omnira-space-2: 8px;
@@ -99,8 +118,9 @@
 
   --omnira-transition-fast: 150ms ease-out;
   --omnira-transition-state: 200ms ease-in-out;
-  --omnira-radius: 16px;
-  --omnira-radius-sm: 10px;
+  --omnira-radius: 20px;
+  --omnira-radius-lg: 24px;
+  --omnira-radius-sm: 12px;
 
   /* Layered elevation shadows — depth cues for the 3D/"futuristic" surface
      language (§ glass panels, orb, bubbles, buttons all pull from these
@@ -109,6 +129,23 @@
   --omnira-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 18px 40px -12px rgba(0, 0, 0, 0.55);
   --omnira-shadow-3: 0 4px 12px rgba(0, 0, 0, 0.4), 0 32px 64px -16px rgba(0, 0, 0, 0.6);
   --omnira-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--omnira-bg);
+  color: var(--omnira-text-primary);
+  font-family: var(--omnira-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--omnira-font-heading);
+  margin: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -227,6 +264,81 @@
   background: radial-gradient(circle, var(--omnira-aurora-c), transparent 65%);
   filter: blur(90px);
   animation: omnira-aurora-drift 34s ease-in-out infinite;
+}
+
+/* A slow light beam sweeping the full height of the screen — reads as a
+   scanner pass rather than a moving spotlight, kept faint enough to never
+   compete with foreground content. */
+@keyframes omnira-scan-beam-sweep {
+  0%   { transform: translateX(-20vw); opacity: 0; }
+  8%   { opacity: 0.5; }
+  50%  { opacity: 0.5; }
+  92%  { opacity: 0; }
+  100% { transform: translateX(120vw); opacity: 0; }
+}
+.omnira-scan-beam {
+  position: absolute;
+  inset: 0;
+  width: 240px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--omnira-cyan) 14%, transparent), transparent);
+  animation: omnira-scan-beam-sweep 16s ease-in-out infinite;
+  animation-delay: 3s;
+}
+
+.omnira-particle-field {
+  position: absolute;
+  inset: 0;
+}
+@keyframes omnira-particle-float {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  10%  { opacity: 0.8; }
+  50%  { transform: translateY(-38px) translateX(14px); opacity: 0.5; }
+  90%  { opacity: 0.8; }
+  100% { transform: translateY(-78px) translateX(-8px); opacity: 0; }
+}
+.omnira-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--omnira-cyan);
+  box-shadow: 0 0 6px 1px var(--omnira-glow);
+  animation-name: omnira-particle-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* Two fixed-position radar "blips" pinging on independent, slow, offset
+   cycles — an ambient sign of life at the corners of the screen even while
+   nothing else is happening. */
+@keyframes omnira-data-pulse-ping {
+  0%   { transform: scale(0.4); opacity: 0.5; }
+  70%  { opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.omnira-data-pulse {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--omnira-cyan);
+  animation: omnira-data-pulse-ping 6s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+}
+.omnira-data-pulse--a { top: 14%; left: 82%; animation-delay: 0.5s; }
+.omnira-data-pulse--b { top: 76%; left: 12%; animation-delay: 3.4s; border-color: var(--omnira-purple); }
+
+.omnira-cursor-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    380px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    color-mix(in srgb, var(--omnira-cyan) 7%, transparent),
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+}
+@media (prefers-reduced-motion: reduce) {
+  .omnira-cursor-glow { display: none; }
 }
 
 .omnira-glass {
@@ -377,7 +489,12 @@
   background: radial-gradient(circle, var(--omnira-accent), transparent 70%);
   opacity: 0;
   filter: blur(12px);
-  transition: opacity var(--omnira-transition-state);
+  /* --omnira-mic-level (0–1) is written directly via a ref by
+     useMicLevelMeter, from a real Web Audio analyser reading of the mic
+     input — not simulated. Defaults to 0 (no visual change) whenever
+     nothing is actually listening. */
+  transform: scale(calc(1 + var(--omnira-mic-level, 0) * 0.55));
+  transition: opacity var(--omnira-transition-state), transform 70ms linear;
   z-index: -1;
 }
 
@@ -443,6 +560,60 @@
 .omnira-orb[data-size="lg"] .omnira-orb__ring--inner {
   inset: 14px;
 }
+
+/* A ring that periodically expands out and fades — a heartbeat-like "energy
+   pulse" that keeps the core reading as alive even at rest, not just the
+   idle glow breathing in place. */
+@keyframes omnira-orb-energy-pulse {
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.omnira-orb__pulsering {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1.5px solid var(--omnira-cyan);
+  animation: omnira-orb-energy-pulse 5s cubic-bezier(0.2, 0.65, 0.4, 1) infinite;
+  pointer-events: none;
+}
+.omnira-orb[data-state="listening"] .omnira-orb__pulsering { animation-duration: 1.7s; }
+.omnira-orb[data-state="thinking"] .omnira-orb__pulsering { animation-duration: 1.2s; border-color: var(--omnira-purple); }
+.omnira-orb[data-state="speaking"] .omnira-orb__pulsering { animation-duration: 0.9s; border-color: var(--omnira-success); }
+.omnira-orb[data-disabled="true"] .omnira-orb__pulsering { animation-play-state: paused; opacity: 0; }
+
+/* "Neural particles" orbiting the core at three different radii, speeds and
+   directions — small dots tracing a circle via a rotating parent, the same
+   trick as the ring3d gyroscope but in the 2D plane and purely decorative
+   (no state semantics), just constant ambient motion. */
+.omnira-orb__particle-orbit {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.omnira-orb__particle-orbit span {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--omnira-cyan);
+  box-shadow: 0 0 6px 1px var(--omnira-glow);
+}
+.omnira-orb__particle-orbit--1 { inset: -46px; animation: omnira-orb-spin 8s linear infinite; }
+.omnira-orb__particle-orbit--2 {
+  inset: -66px;
+  animation: omnira-orb-spin-reverse 12s linear infinite;
+}
+.omnira-orb__particle-orbit--2 span { background: var(--omnira-blue); box-shadow: 0 0 6px 1px var(--omnira-blue); }
+.omnira-orb__particle-orbit--3 { inset: -28px; animation: omnira-orb-spin 5.5s linear infinite; }
+.omnira-orb__particle-orbit--3 span { background: var(--omnira-purple); box-shadow: 0 0 6px 1px var(--omnira-purple); }
+.omnira-orb[data-state="thinking"] .omnira-orb__particle-orbit--1,
+.omnira-orb[data-state="listening"] .omnira-orb__particle-orbit--1 { animation-duration: 3s; }
+.omnira-orb[data-state="thinking"] .omnira-orb__particle-orbit--2,
+.omnira-orb[data-state="listening"] .omnira-orb__particle-orbit--2 { animation-duration: 4.5s; }
+.omnira-orb[data-disabled="true"] .omnira-orb__particle-orbit { opacity: 0.12; animation-play-state: paused; }
 
 /* Genuine 3D rings (rotateX/rotateY tilt the ring's own plane in space, not
    just a 2D spin) — three rings on different tilted axes read as an
@@ -527,6 +698,8 @@
 
 /* Buttons */
 .omnira-btn {
+  position: relative;
+  overflow: hidden;
   font-family: var(--omnira-font-sans);
   font-size: var(--omnira-text-sm);
   font-weight: 600;
@@ -540,6 +713,17 @@
     box-shadow var(--omnira-transition-fast),
     background var(--omnira-transition-fast),
     opacity var(--omnira-transition-fast);
+}
+.omnira-btn__ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5), transparent 70%);
+  transform: scale(0);
+  animation: omnira-btn-ripple 650ms ease-out;
+  pointer-events: none;
+}
+@keyframes omnira-btn-ripple {
+  to { transform: scale(1); opacity: 0; }
 }
 .omnira-btn:hover:not(:disabled) { transform: translateY(-2px); }
 .omnira-btn:active:not(:disabled) { transform: translateY(0) scale(0.97); box-shadow: var(--omnira-shadow-1); }
@@ -569,6 +753,330 @@
 
 .omnira-btn--full {
   width: 100%;
+}
+
+/* Widget cards — the floating glass modules used throughout both sidebars
+   and the dashboard area. */
+.omnira-widget {
+  position: relative;
+  overflow: hidden;
+  padding: var(--omnira-space-3) var(--omnira-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--omnira-space-2);
+  border-radius: var(--omnira-radius);
+  transition: box-shadow var(--omnira-transition-fast), border-color var(--omnira-transition-fast), transform var(--omnira-transition-fast);
+}
+.omnira-widget:hover {
+  box-shadow: var(--omnira-shadow-2), var(--omnira-inset-highlight), 0 0 28px -8px color-mix(in srgb, var(--omnira-cyan) 55%, transparent);
+  border-color: color-mix(in srgb, var(--omnira-cyan) 45%, var(--omnira-glass-border));
+}
+.omnira-widget::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--omnira-cyan) 10%, transparent), transparent);
+  transform: skewX(-15deg);
+  opacity: 0;
+  pointer-events: none;
+}
+.omnira-widget:hover::after {
+  opacity: 1;
+  animation: omnira-widget-shimmer 1s ease;
+}
+@keyframes omnira-widget-shimmer {
+  from { left: -60%; }
+  to { left: 130%; }
+}
+.omnira-widget--compact { padding: var(--omnira-space-2) var(--omnira-space-3); gap: var(--omnira-space-1); }
+.omnira-widget--disconnected { opacity: 0.62; }
+.omnira-widget--disconnected:hover { opacity: 0.85; }
+
+.omnira-widget__header {
+  display: flex;
+  align-items: center;
+  gap: var(--omnira-space-2);
+}
+.omnira-widget__icon {
+  display: inline-flex;
+  color: var(--omnira-cyan);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--omnira-cyan) 55%, transparent));
+}
+.omnira-widget__title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--omnira-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--omnira-text-secondary);
+}
+.omnira-widget__action { margin-left: auto; }
+.omnira-widget__body {
+  font-size: var(--omnira-text-sm);
+  color: var(--omnira-text-primary);
+}
+.omnira-widget__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--omnira-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--omnira-text-secondary);
+}
+.omnira-widget__status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--omnira-text-secondary);
+  opacity: 0.5;
+}
+
+/* Honest-placeholder rows — widgets with no real backing data source yet. */
+.omnira-placeholder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--omnira-space-1) var(--omnira-space-3);
+}
+.omnira-placeholder-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-family: var(--omnira-font-mono);
+  font-size: 10.5px;
+  color: var(--omnira-text-secondary);
+}
+.omnira-placeholder-row__icon {
+  display: inline-flex;
+  opacity: 0.7;
+}
+.omnira-placeholder-row__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.omnira-placeholder-row__value {
+  opacity: 0.55;
+  font-size: 9.5px;
+}
+
+/* Left/right sidebar shared bits — the sidebar itself is a flex column of
+   WidgetCards, scrollable as one unit. */
+.omnira-sidebar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--omnira-space-3);
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.omnira-quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--omnira-space-2);
+}
+.omnira-chip {
+  flex: 1;
+  font-family: var(--omnira-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--omnira-text-secondary);
+  background: var(--omnira-glass-bg);
+  border: 1px solid var(--omnira-glass-border);
+  border-radius: var(--omnira-radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: border-color var(--omnira-transition-fast), color var(--omnira-transition-fast);
+}
+.omnira-chip:disabled { cursor: not-allowed; opacity: 0.4; }
+.omnira-chip[data-on="true"] {
+  color: var(--omnira-cyan);
+  border-color: color-mix(in srgb, var(--omnira-cyan) 50%, var(--omnira-glass-border));
+  box-shadow: 0 0 10px -3px var(--omnira-cyan);
+}
+.omnira-chip:hover:not(:disabled) { border-color: var(--omnira-accent); }
+
+.omnira-conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.omnira-conversation-item {
+  text-align: left;
+  padding: 7px var(--omnira-space-2);
+  border-radius: var(--omnira-radius-sm);
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--omnira-text-secondary);
+  font-size: var(--omnira-text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background var(--omnira-transition-fast), color var(--omnira-transition-fast);
+}
+.omnira-conversation-item:hover { background: var(--omnira-glass-border); color: var(--omnira-text-primary); }
+.omnira-conversation-item[data-active="true"] {
+  background: color-mix(in srgb, var(--omnira-cyan) 14%, transparent);
+  color: var(--omnira-text-primary);
+  box-shadow: inset 2px 0 0 var(--omnira-cyan);
+}
+
+.omnira-headline-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--omnira-space-1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+.omnira-headline-link {
+  color: var(--omnira-text-secondary);
+  font-size: var(--omnira-text-xs);
+  line-height: 1.4;
+  text-decoration: none;
+  transition: color var(--omnira-transition-fast);
+}
+.omnira-headline-link:hover { color: var(--omnira-cyan); }
+
+.omnira-widget-stat {
+  font-family: var(--omnira-font-heading);
+  font-size: var(--omnira-text-xl);
+  font-weight: 600;
+  color: var(--omnira-text-primary);
+}
+
+.omnira-sparkline {
+  width: 100%;
+  height: 40px;
+  margin-top: var(--omnira-space-2);
+  overflow: visible;
+}
+.omnira-sparkline__line {
+  stroke: var(--omnira-cyan);
+  stroke-width: 1.6;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--omnira-cyan) 60%, transparent));
+}
+.omnira-sparkline__fill {
+  fill: color-mix(in srgb, var(--omnira-cyan) 12%, transparent);
+  stroke: none;
+}
+
+.omnira-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--omnira-space-2) var(--omnira-space-3);
+  margin-top: var(--omnira-space-1);
+}
+
+.omnira-event-log {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  font-family: var(--omnira-font-mono);
+}
+.omnira-event-log__line {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--omnira-text-secondary);
+  animation: omnira-fade-in-up 220ms ease-out both;
+}
+.omnira-event-log__line[data-kind="success"] { color: var(--omnira-success); }
+.omnira-event-log__line[data-kind="warning"] { color: var(--omnira-warning); }
+.omnira-event-log__line[data-kind="error"] { color: var(--omnira-danger); }
+.omnira-event-log__time {
+  color: var(--omnira-text-secondary);
+  opacity: 0.6;
+  margin-right: 4px;
+}
+
+/* macOS-style bottom dock */
+.omnira-dock {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  width: fit-content;
+  margin: 0 auto;
+}
+.omnira-dock__item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: none;
+  background: transparent;
+  color: var(--omnira-text-secondary);
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.3, 1.4), color var(--omnira-transition-fast), background var(--omnira-transition-fast);
+}
+.omnira-dock__item:hover:not(:disabled) {
+  transform: translateY(-8px) scale(1.18);
+  background: var(--omnira-glass-border);
+  color: var(--omnira-cyan);
+}
+.omnira-dock__item[data-active="true"] {
+  color: var(--omnira-cyan);
+}
+.omnira-dock__item[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--omnira-cyan);
+  box-shadow: 0 0 6px var(--omnira-cyan);
+}
+.omnira-dock__item:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+.omnira-dock__label {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--omnira-surface-raised);
+  border: 1px solid var(--omnira-glass-border);
+  color: var(--omnira-text-primary);
+  font-size: 10.5px;
+  font-family: var(--omnira-font-mono);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+.omnira-dock__item:hover .omnira-dock__label {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* Form fields & cards */
@@ -751,12 +1259,13 @@
   z-index: 1;
   display: grid;
   height: 100vh;
-  grid-template-columns: 240px 1fr 320px;
-  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 300px 1fr 360px;
+  grid-template-rows: auto 1fr auto auto;
   grid-template-areas:
     "topbar topbar topbar"
-    "sidebar center commlog"
-    "sidebar console console";
+    "sidebar center right"
+    "sidebar console right"
+    "dock dock dock";
   gap: var(--omnira-space-4);
   padding: var(--omnira-space-4);
   box-sizing: border-box;
@@ -765,23 +1274,45 @@
 .omnira-hud-topbar { grid-area: topbar; }
 .omnira-hud-sidebar { grid-area: sidebar; min-height: 0; }
 .omnira-hud-center { grid-area: center; min-height: 0; }
-.omnira-hud-commlog { grid-area: commlog; min-height: 0; }
+.omnira-hud-right { grid-area: right; min-height: 0; }
 .omnira-hud-console { grid-area: console; }
+.omnira-hud-dock { grid-area: dock; }
 
-@media (max-width: 900px) {
+.omnira-right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--omnira-space-3);
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.omnira-hud-commlog {
+  flex: 1 1 200px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--omnira-space-3);
+  padding: var(--omnira-space-3) var(--omnira-space-4);
+  overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
   .omnira-hud-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-rows: auto auto 1fr auto auto auto;
     grid-template-areas:
       "topbar"
       "center"
-      "commlog"
+      "right"
       "console"
-      "sidebar";
+      "sidebar"
+      "dock";
     height: auto;
     min-height: 100vh;
   }
-  .omnira-hud-sidebar { max-height: 220px; }
+  .omnira-hud-sidebar { max-height: 260px; }
+  .omnira-hud-right { max-height: 480px; }
 }
 
 .omnira-hud-radar {
@@ -893,6 +1424,9 @@
   .omnira-aurora-bg::before,
   .omnira-aurora-bg::after,
   .omnira-aurora-bg__accent,
+  .omnira-scan-beam,
+  .omnira-particle,
+  .omnira-data-pulse,
   .omnira-fade-in-up,
   .omnira-bubble-in-3d,
   .omnira-typing__dot,
@@ -902,6 +1436,10 @@
   .omnira-orb__ticks,
   .omnira-orb__ring3d,
   .omnira-orb__scan,
+  .omnira-orb__pulsering,
+  .omnira-orb__particle-orbit,
+  .omnira-btn__ripple,
+  .omnira-widget::after,
   .omnira-orb[data-state="listening"],
   .omnira-hud-radar,
   .omnira-boot-topbar,

@@ -1,9 +1,13 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export interface VoiceRecorder {
   start: () => Promise<void>;
   /** Resolves with the recorded audio once the recorder has fully stopped. */
   stop: () => Promise<Blob>;
+  /** The live capture stream while recording, or null — lets the UI drive a
+      genuine mic-level meter (e.g. Web Audio AnalyserNode) off real input
+      rather than a simulated animation. Reactive: updates on start/stop. */
+  stream: MediaStream | null;
 }
 
 /**
@@ -36,17 +40,19 @@ export function useVoiceRecorder(): VoiceRecorder {
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const mimeTypeRef = useRef<string>("audio/webm");
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   const start = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    streamRef.current = stream;
+    const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    streamRef.current = mediaStream;
+    setStream(mediaStream);
     chunksRef.current = [];
 
     // undefined mimeType lets the browser pick its own default rather than
     // throwing — better than failing outright on a browser this candidate
     // list doesn't happen to cover.
     const mimeType = pickSupportedMimeType();
-    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    const recorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
     mimeTypeRef.current = mimeType ?? (recorder.mimeType || "audio/webm");
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) chunksRef.current.push(event.data);
@@ -64,6 +70,8 @@ export function useVoiceRecorder(): VoiceRecorder {
       }
       recorder.onstop = () => {
         streamRef.current?.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        setStream(null);
         recorderRef.current = null;
         const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
         if (blob.size === 0) {
@@ -82,5 +90,5 @@ export function useVoiceRecorder(): VoiceRecorder {
     });
   }, []);
 
-  return { start, stop };
+  return { start, stop, stream };
 }

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { AuroraBackground } from "@omnira/ui-kit";
+import { AuroraBackground, CursorGlow } from "@omnira/ui-kit";
 import { isAuthenticated } from "./api-client.js";
 import { LoginForm } from "./auth/LoginForm.js";
 import { Onboarding } from "./onboarding/Onboarding.js";
@@ -26,6 +26,7 @@ export function App(): ReactNode {
   return (
     <>
       <AuroraBackground />
+      <CursorGlow />
       <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
         {stage === "auth" && <LoginForm onAuthenticated={() => setStage("onboarding")} />}
         {stage === "onboarding" && <Onboarding onComplete={() => setStage("chat")} />}

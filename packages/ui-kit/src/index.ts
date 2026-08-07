@@ -11,6 +11,11 @@ export { TypingIndicator } from "./TypingIndicator.js";
 
 export { AuroraBackground } from "./AuroraBackground.js";
 
+export { CursorGlow } from "./CursorGlow.js";
+
+export { WidgetCard } from "./WidgetCard.js";
+export type { WidgetCardProps } from "./WidgetCard.js";
+
 export { spacing, VoiceState, VOICE_STATE_COLOR_TOKEN } from "./tokens.js";
 
 export { useTilt3D } from "./useTilt3D.js";
