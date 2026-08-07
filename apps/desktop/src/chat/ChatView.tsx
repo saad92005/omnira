@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 import { Button, MicButton, NerveField, VoiceState } from "@omnira/ui-kit";
 import {
   ApiError,
-  clearTokens,
   getActiveCapabilities,
   getAgents,
   getConversationMessages,
@@ -12,6 +11,7 @@ import {
   grantSystemControlPermission,
   isVoiceAvailable,
   listConversations,
+  logout,
   revokeMicrophonePermission,
   sendChatMessage,
   transcribeAudio,
@@ -227,7 +227,7 @@ export function ChatView(): ReactNode {
   }
 
   function handleSignOut(): void {
-    clearTokens();
+    void logout();
     window.location.reload();
   }
 

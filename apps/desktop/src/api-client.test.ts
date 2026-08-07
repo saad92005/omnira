@@ -7,6 +7,7 @@ import {
   getConversationMessages,
   listConversations,
   login,
+  logout,
   setTokens,
   transcribeAudio,
 } from "./api-client.js";
@@ -140,6 +141,114 @@ describe("transcribeAudio", () => {
 
     const file = capturedForm?.get("file") as File;
     expect(file.name).toBe("utterance.webm");
+  });
+});
+
+describe("token refresh", () => {
+  it("silently refreshes an expired access token and retries the original request once", async () => {
+    setTokens("expired-access", "refresh-1");
+    const calls: string[] = [];
+    global.fetch = vi.fn(async (url) => {
+      const path = String(url);
+      calls.push(path);
+      if (path.endsWith("/auth/refresh")) {
+        return new Response(JSON.stringify({ accessToken: "fresh-access", refreshToken: "refresh-2" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      // /conversations: fail once (simulating the expired token), then succeed.
+      const alreadyRefreshed = calls.filter((c) => c.includes("/conversations")).length > 1;
+      if (!alreadyRefreshed) {
+        return new Response(
+          JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Access token is invalid or expired", requestId: "r1" } }),
+          { status: 401, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response(JSON.stringify({ conversations: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as never;
+
+    const conversations = await listConversations();
+
+    expect(conversations).toEqual([]);
+    expect(getAccessToken()).toBe("fresh-access");
+    // One failed /conversations call, one /auth/refresh call, one retried /conversations call.
+    expect(calls.filter((c) => c.includes("/conversations")).length).toBe(2);
+    expect(calls.filter((c) => c.includes("/auth/refresh")).length).toBe(1);
+  });
+
+  it("coalesces simultaneous refreshes from concurrent 401s into a single /auth/refresh call", async () => {
+    setTokens("expired-access", "refresh-1");
+    let refreshCalls = 0;
+    global.fetch = vi.fn(async (url) => {
+      const path = String(url);
+      if (path.endsWith("/auth/refresh")) {
+        refreshCalls += 1;
+        return new Response(JSON.stringify({ accessToken: "fresh-access", refreshToken: "refresh-2" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (getAccessToken() === "expired-access") {
+        return new Response(
+          JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Access token is invalid or expired", requestId: "r1" } }),
+          { status: 401, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response(JSON.stringify({ conversations: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as never;
+
+    // Two requests race in with the same expired token, like ChatView's boot burst.
+    await Promise.all([listConversations(), listConversations()]);
+
+    expect(refreshCalls).toBe(1);
+  });
+
+  it("clears tokens and stops retrying when the refresh token itself is dead", async () => {
+    setTokens("expired-access", "dead-refresh");
+    global.fetch = vi.fn(async (url) => {
+      const path = String(url);
+      if (path.endsWith("/auth/refresh")) {
+        return new Response(
+          JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Refresh token is invalid, expired, or already used", requestId: "r1" } }),
+          { status: 401, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response(
+        JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Access token is invalid or expired", requestId: "r1" } }),
+        { status: 401, headers: { "content-type": "application/json" } },
+      );
+    }) as never;
+
+    await expect(listConversations()).rejects.toMatchObject({ code: "SESSION_EXPIRED" });
+    expect(getAccessToken()).toBeNull();
+  });
+});
+
+describe("logout", () => {
+  it("clears local tokens even if the server revoke call fails", async () => {
+    setTokens("access-1", "refresh-1");
+    global.fetch = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    }) as never;
+
+    await logout();
+    expect(getAccessToken()).toBeNull();
+  });
+
+  it("is a no-op network-wise when there's nothing to revoke", async () => {
+    clearTokens();
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as never;
+
+    await logout();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
 

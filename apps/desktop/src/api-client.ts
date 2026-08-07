@@ -26,6 +26,23 @@ export function isAuthenticated(): boolean {
   return getAccessToken() !== null;
 }
 
+/** Revokes the refresh token server-side (best-effort) and clears local storage. */
+export async function logout(): Promise<void> {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  clearTokens();
+  if (!refreshToken) return;
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    // Best-effort: the token is already wiped locally either way, so a
+    // failed revoke just means it dies naturally at its own expiry instead.
+  }
+}
+
 interface ApiErrorEnvelope {
   error: { code: string; message: string; requestId: string };
 }
@@ -40,7 +57,53 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+// Access tokens are short-lived (15 minutes) by design — this coalesces
+// concurrent refresh attempts into one in-flight request, since the refresh
+// endpoint rotates the token (single-use): several requests 401'ing at once
+// (e.g. the boot-time burst of calls in ChatView) must not each try to
+// redeem the same refresh token independently, or all but the first fail.
+let refreshPromise: Promise<void> | null = null;
+
+function refreshAccessToken(): Promise<void> {
+  refreshPromise ??= doRefresh().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
+async function doRefresh(): Promise<void> {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refreshToken) {
+    clearTokens();
+    throw new ApiError("SESSION_EXPIRED", "Your session has expired. Please sign in again.");
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    throw new ApiError("NETWORK_ERROR", "Could not reach Omnira. Check that the server is running.");
+  }
+
+  if (!response.ok) {
+    // The refresh token itself is dead (expired, revoked, or already used)
+    // — there's no recovering this session. Send the user back to sign-in
+    // rather than leaving them stuck on a chat screen that can never
+    // succeed again until they do that anyway.
+    clearTokens();
+    window.location.reload();
+    throw new ApiError("SESSION_EXPIRED", "Your session has expired. Please sign in again.");
+  }
+
+  const tokens = (await response.json()) as { accessToken: string; refreshToken: string };
+  setTokens(tokens.accessToken, tokens.refreshToken);
+}
+
+async function request<T>(path: string, init: RequestInit = {}, isRetry = false): Promise<T> {
   const headers = new Headers(init.headers);
   const token = getAccessToken();
   if (token) headers.set("authorization", `Bearer ${token}`);
@@ -59,7 +122,19 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as ApiErrorEnvelope | null;
-    throw new ApiError(envelope?.error.code ?? "UNKNOWN", envelope?.error.message ?? response.statusText);
+    const code = envelope?.error.code ?? "UNKNOWN";
+
+    // A bearer token that's expired or otherwise invalid — refresh it
+    // silently and retry exactly once. If the retry still fails (or the
+    // refresh itself fails), that error propagates normally instead of
+    // looping — the request that started all this only ever gets one
+    // second chance.
+    if (response.status === 401 && code === "UNAUTHORIZED" && token && !isRetry) {
+      await refreshAccessToken();
+      return request<T>(path, init, true);
+    }
+
+    throw new ApiError(code, envelope?.error.message ?? response.statusText);
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
