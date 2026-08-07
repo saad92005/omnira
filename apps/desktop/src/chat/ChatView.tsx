@@ -17,7 +17,9 @@ import {
   type ConversationSummary,
   type NewsHeadline,
 } from "../api-client.js";
+import type { Automation } from "../automations.js";
 import { runClientAction } from "../client-actions.js";
+import { useAutomations } from "../hooks/useAutomations.js";
 import { useEventLog } from "../hooks/useEventLog.js";
 import { useMicLevelMeter } from "../hooks/useMicLevelMeter.js";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder.js";
@@ -243,6 +245,15 @@ export function ChatView(): ReactNode {
     },
     [conversationId, refreshConversations, log],
   );
+
+  const handleAutomationRun = useCallback(
+    (automation: Automation) => {
+      log(`Automation "${automation.label}" ran`, "success");
+      void send(automation.message);
+    },
+    [send, log],
+  );
+  const { automations, addAutomation, removeAutomation, toggleAutomation } = useAutomations(handleAutomationRun);
 
   async function speakReply(text: string): Promise<void> {
     setVoiceState(VoiceState.Speaking);
@@ -471,6 +482,10 @@ export function ChatView(): ReactNode {
         onRevokeMic={handleRevokeMic}
         onGrantSystemControl={handleGrantSystemControl}
         onSignOut={handleSignOut}
+        automations={automations}
+        addAutomation={addAutomation}
+        removeAutomation={removeAutomation}
+        toggleAutomation={toggleAutomation}
       />
     </div>
   );

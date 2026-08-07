@@ -23,11 +23,6 @@ export const MODULE_INFO: Record<string, ModuleInfo> = {
     description: "There's no embedded browser or web-browsing capability inside Omnira yet.",
     related: "With System Control permission granted, Omnira can open a URL in your default browser when you ask it to in chat.",
   },
-  automation: {
-    title: "Automation",
-    description: "There's no workflow-automation or task-scheduling engine yet.",
-    related: "Ask Omnira directly in chat — it can already set countdown timers and copy text to your clipboard as one-off actions.",
-  },
   analytics: {
     title: "Analytics",
     description: "Omnira doesn't collect or display usage analytics yet.",
