@@ -1015,6 +1015,119 @@ h1, h2, h3, h4 {
   margin-right: 4px;
 }
 
+/* Modal chrome — used for the dock's module panels (and anything else that
+   needs a centered glass overlay). */
+@keyframes omnira-modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.omnira-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(3, 5, 12, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--omnira-space-4);
+  animation: omnira-fade-in-up 150ms ease-out both;
+}
+.omnira-modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: min(80vh, 640px);
+  overflow-y: auto;
+  padding: var(--omnira-space-4);
+  border-radius: var(--omnira-radius-lg);
+  animation: omnira-modal-in 180ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.omnira-modal__header {
+  display: flex;
+  align-items: center;
+  gap: var(--omnira-space-2);
+  margin-bottom: var(--omnira-space-3);
+}
+.omnira-modal__icon {
+  color: var(--omnira-cyan);
+  display: inline-flex;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--omnira-cyan) 55%, transparent));
+}
+.omnira-modal__title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--omnira-font-heading);
+  font-size: var(--omnira-text-lg);
+  font-weight: 700;
+  color: var(--omnira-text-primary);
+}
+.omnira-modal__close {
+  background: transparent;
+  border: none;
+  color: var(--omnira-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--omnira-radius-sm);
+  display: inline-flex;
+  transition: color var(--omnira-transition-fast), background var(--omnira-transition-fast);
+}
+.omnira-modal__close:hover { color: var(--omnira-text-primary); background: var(--omnira-glass-border); }
+.omnira-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--omnira-space-3);
+  font-size: var(--omnira-text-sm);
+  color: var(--omnira-text-secondary);
+  line-height: 1.5;
+}
+.omnira-modal__badge {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--omnira-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--omnira-text-secondary);
+  border: 1px solid var(--omnira-glass-border);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.omnira-modal__badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--omnira-warning);
+}
+.omnira-modal__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--omnira-space-3);
+  padding: var(--omnira-space-2) 0;
+  border-top: 1px solid var(--omnira-glass-border);
+}
+.omnira-modal__row:first-child { border-top: none; }
+.omnira-modal__row-label { color: var(--omnira-text-primary); font-size: var(--omnira-text-sm); }
+.omnira-modal__row-desc { color: var(--omnira-text-secondary); font-size: 11.5px; margin: 2px 0 0; }
+.omnira-modal__conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .omnira-modal-backdrop { align-items: flex-end; padding: 0; }
+  .omnira-modal {
+    max-width: 100%;
+    max-height: 82vh;
+    border-radius: var(--omnira-radius-lg) var(--omnira-radius-lg) 0 0;
+  }
+}
+
 /* macOS-style bottom dock */
 .omnira-dock {
   display: flex;
@@ -1024,11 +1137,16 @@ h1, h2, h3, h4 {
   padding: 8px 14px;
   border-radius: 999px;
   width: fit-content;
+  max-width: 100%;
   margin: 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.omnira-dock::-webkit-scrollbar { display: none; }
 .omnira-dock__item {
   position: relative;
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   width: 42px;
@@ -1040,7 +1158,7 @@ h1, h2, h3, h4 {
   cursor: pointer;
   transition: transform 160ms cubic-bezier(0.2, 0.8, 0.3, 1.4), color var(--omnira-transition-fast), background var(--omnira-transition-fast);
 }
-.omnira-dock__item:hover:not(:disabled) {
+.omnira-dock__item:hover {
   transform: translateY(-8px) scale(1.18);
   background: var(--omnira-glass-border);
   color: var(--omnira-cyan);
@@ -1060,9 +1178,15 @@ h1, h2, h3, h4 {
   background: var(--omnira-cyan);
   box-shadow: 0 0 6px var(--omnira-cyan);
 }
-.omnira-dock__item:disabled {
-  cursor: not-allowed;
-  opacity: 0.35;
+.omnira-dock__pending {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--omnira-warning);
+  opacity: 0.85;
 }
 .omnira-dock__label {
   position: absolute;
@@ -1266,7 +1390,7 @@ h1, h2, h3, h4 {
   z-index: 1;
   display: grid;
   height: 100vh;
-  grid-template-columns: 300px 1fr 360px;
+  grid-template-columns: 300px minmax(0, 1fr) 360px;
   grid-template-rows: auto 1fr auto auto;
   grid-template-areas:
     "topbar topbar topbar"
@@ -1278,12 +1402,17 @@ h1, h2, h3, h4 {
   box-sizing: border-box;
 }
 
-.omnira-hud-topbar { grid-area: topbar; }
-.omnira-hud-sidebar { grid-area: sidebar; min-height: 0; }
-.omnira-hud-center { grid-area: center; min-height: 0; }
-.omnira-hud-right { grid-area: right; min-height: 0; }
-.omnira-hud-console { grid-area: console; }
-.omnira-hud-dock { grid-area: dock; }
+/* min-width: 0 overrides the default min-width:auto that grid items get —
+   without it, a track sized with a plain `fr` unit still refuses to shrink
+   below its content's intrinsic (min-content) width, which is how a wide
+   flex row (the topbar's badge cluster, in practice) forces the whole grid
+   — and the page — wider than the viewport on narrow screens. */
+.omnira-hud-topbar { grid-area: topbar; min-width: 0; }
+.omnira-hud-sidebar { grid-area: sidebar; min-height: 0; min-width: 0; }
+.omnira-hud-center { grid-area: center; min-height: 0; min-width: 0; }
+.omnira-hud-right { grid-area: right; min-height: 0; min-width: 0; }
+.omnira-hud-console { grid-area: console; min-width: 0; }
+.omnira-hud-dock { grid-area: dock; min-width: 0; }
 
 .omnira-right-stack {
   display: flex;
@@ -1306,7 +1435,7 @@ h1, h2, h3, h4 {
 
 @media (max-width: 1100px) {
   .omnira-hud-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto 1fr auto auto auto;
     grid-template-areas:
       "topbar"
@@ -1320,6 +1449,45 @@ h1, h2, h3, h4 {
   }
   .omnira-hud-sidebar { max-height: 260px; }
   .omnira-hud-right { max-height: 480px; }
+}
+
+/* Phone-width pass. The 1100px breakpoint above already collapses the grid
+   to one column — this tightens spacing, shrinks the AI core so its outer
+   rings don't push the page wider than the viewport, and stops iOS Safari
+   from auto-zooming when the message input is focused. */
+@media (max-width: 640px) {
+  html, body { overflow-x: hidden; }
+
+  .omnira-hud-shell {
+    gap: var(--omnira-space-2);
+    padding: var(--omnira-space-2);
+  }
+  .omnira-hud-sidebar { max-height: 34vh; }
+  .omnira-hud-right { max-height: 42vh; }
+
+  .omnira-hud-topbar {
+    flex-wrap: wrap;
+    row-gap: var(--omnira-space-2);
+  }
+  .omnira-hud-topbar > div {
+    flex-wrap: wrap;
+    row-gap: var(--omnira-space-1);
+    gap: var(--omnira-space-2) !important;
+  }
+
+  .omnira-orb[data-size="lg"] {
+    width: 168px;
+    height: 168px;
+  }
+  .omnira-orb[data-size="lg"] .omnira-orb__core { inset: 26px; }
+  .omnira-orb[data-size="lg"] .omnira-orb__ring--inner { inset: 10px; }
+
+  .omnira-dock__item { width: 38px; height: 38px; }
+
+  .omnira-input { font-size: 16px; }
+
+  .omnira-widget { padding: var(--omnira-space-2) var(--omnira-space-3); }
+  .omnira-quick-actions > div { flex-wrap: wrap; }
 }
 
 .omnira-hud-radar {
@@ -1447,6 +1615,8 @@ h1, h2, h3, h4 {
   .omnira-orb__particle-orbit,
   .omnira-btn__ripple,
   .omnira-widget::after,
+  .omnira-modal,
+  .omnira-modal-backdrop,
   .omnira-orb[data-state="listening"],
   .omnira-hud-radar,
   .omnira-boot-topbar,

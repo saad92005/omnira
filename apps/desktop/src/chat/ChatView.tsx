@@ -3,11 +3,15 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 import { Button, MicButton, VoiceState } from "@omnira/ui-kit";
 import {
   ApiError,
+  clearTokens,
   getActiveCapabilities,
   getConversationMessages,
   getNewsHeadlines,
+  grantMicrophonePermission,
+  grantSystemControlPermission,
   isVoiceAvailable,
   listConversations,
+  revokeMicrophonePermission,
   sendChatMessage,
   transcribeAudio,
   type ConversationSummary,
@@ -20,6 +24,7 @@ import { useVoiceRecorder } from "../hooks/useVoiceRecorder.js";
 import { speak } from "../speech.js";
 import { getCurrentWeather, type CurrentWeather } from "../weather.js";
 import { Dock } from "./Dock.js";
+import { DockPanels } from "./DockPanels.js";
 import { LeftSidebar } from "./LeftSidebar.js";
 import { RightPanel } from "./RightPanel.js";
 
@@ -56,6 +61,7 @@ export function ChatView(): ReactNode {
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
   const [headlines, setHeadlines] = useState<NewsHeadline[]>([]);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
+  const [activeModule, setActiveModule] = useState<string | null>(null);
 
   const recorder = useVoiceRecorder();
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
@@ -169,6 +175,41 @@ export function ChatView(): ReactNode {
       log(`Voice mode ${next ? "enabled" : "disabled"}`);
       return next;
     });
+  }
+
+  function handleDockSelect(id: string): void {
+    if (id === "voice") {
+      toggleVoiceMode();
+      return;
+    }
+    if (id === "chat" || id === "dashboard") {
+      setActiveModule(null);
+      return;
+    }
+    setActiveModule(id);
+  }
+
+  async function handleGrantMic(): Promise<void> {
+    await grantMicrophonePermission();
+    setMicGranted(true);
+    log("Microphone access granted", "success");
+  }
+
+  async function handleRevokeMic(): Promise<void> {
+    await revokeMicrophonePermission();
+    setMicGranted(false);
+    log("Microphone access revoked", "warning");
+  }
+
+  async function handleGrantSystemControl(): Promise<void> {
+    await grantSystemControlPermission();
+    setSystemControlGranted(true);
+    log("System control granted", "success");
+  }
+
+  function handleSignOut(): void {
+    clearTokens();
+    window.location.reload();
   }
 
   const send = useCallback(
@@ -412,8 +453,23 @@ export function ChatView(): ReactNode {
       </form>
 
       <div className="omnira-hud-dock">
-        <Dock voiceMode={voiceMode} onToggleVoiceMode={toggleVoiceMode} />
+        <Dock activeId={activeModule ?? "chat"} voiceMode={voiceMode} onSelect={handleDockSelect} />
       </div>
+
+      <DockPanels
+        activeModule={activeModule}
+        onClose={() => setActiveModule(null)}
+        conversations={conversations}
+        onSelectConversation={(id) => void handleSelectConversation(id)}
+        micGranted={micGranted}
+        systemControlGranted={systemControlGranted}
+        voiceMode={voiceMode}
+        onToggleVoiceMode={toggleVoiceMode}
+        onGrantMic={handleGrantMic}
+        onRevokeMic={handleRevokeMic}
+        onGrantSystemControl={handleGrantSystemControl}
+        onSignOut={handleSignOut}
+      />
     </div>
   );
 }

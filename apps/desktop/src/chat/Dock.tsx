@@ -20,15 +20,15 @@ interface DockItem {
   id: string;
   label: string;
   icon: LucideIcon;
-  available: boolean;
 }
 
 export interface DockProps {
+  activeId: string;
   voiceMode: boolean;
-  onToggleVoiceMode: () => void;
+  onSelect: (id: string) => void;
 }
 
-const ITEMS: Omit<DockItem, "available">[] = [
+const ITEMS: DockItem[] = [
   { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "voice", label: "Voice", icon: Mic2 },
   { id: "agents", label: "Agents", icon: Bot },
@@ -44,34 +44,37 @@ const ITEMS: Omit<DockItem, "available">[] = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-const AVAILABLE = new Set(["chat", "voice"]);
+// Backed by real, working functionality — everything else opens an honest
+// "not connected yet" info panel instead (see dockModules.ts), but every
+// icon here responds to a click; none are dead buttons.
+const REAL_FEATURE = new Set(["chat", "voice", "dashboard", "memory", "settings"]);
 
 /**
- * A macOS-style rounded glass dock. Only "Chat" (the only screen this app
- * has) and "Voice" (toggles voice mode, a real setting) are wired — the
- * rest render dimmed with a "Coming soon" tooltip rather than navigating to
- * pages that don't exist. Per this redesign's brief: frontend/UX only, no
- * new application features, so no fake destinations either.
+ * A macOS-style rounded glass dock. Every icon is interactive — the ones
+ * backed by real functionality act on it directly (voice mode, memory,
+ * settings); the rest open a small honest panel explaining what's not
+ * built yet rather than sitting there disabled. See the redesign brief:
+ * frontend/UX only, no fabricated features.
  */
-export function Dock({ voiceMode, onToggleVoiceMode }: DockProps): ReactNode {
+export function Dock({ activeId, voiceMode, onSelect }: DockProps): ReactNode {
   return (
     <nav className="omnira-dock omnira-glass" aria-label="App dock">
       {ITEMS.map((item) => {
         const Icon = item.icon;
-        const available = AVAILABLE.has(item.id);
         const isVoice = item.id === "voice";
-        const active = item.id === "chat" || (isVoice && voiceMode);
+        const active = item.id === activeId || (isVoice && voiceMode);
+        const real = REAL_FEATURE.has(item.id);
         return (
           <button
             key={item.id}
             type="button"
             className="omnira-dock__item"
             data-active={active}
-            disabled={!available}
-            title={available ? item.label : `${item.label} — coming soon`}
-            onClick={isVoice ? onToggleVoiceMode : undefined}
+            title={real ? item.label : `${item.label} — not connected yet`}
+            onClick={() => onSelect(item.id)}
           >
             <Icon size={20} strokeWidth={1.8} />
+            {!real && <span className="omnira-dock__pending" aria-hidden="true" />}
             <span className="omnira-dock__label">{item.label}</span>
           </button>
         );
