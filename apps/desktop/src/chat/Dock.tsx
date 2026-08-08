@@ -57,6 +57,7 @@ const REAL_FEATURE = new Set([
   "terminal",
   "automation",
   "agents",
+  "browser",
 ]);
 
 /**

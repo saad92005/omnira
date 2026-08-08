@@ -19,13 +19,13 @@ import type { AgentPersonaSummary, ConversationSummary } from "../api-client.js"
 import type { UseAutomationsResult } from "../hooks/useAutomations.js";
 import { AgentsPanel } from "./AgentsPanel.js";
 import { AutomationsPanel } from "./AutomationsPanel.js";
+import { BrowserPanel } from "./BrowserPanel.js";
 import { MODULE_INFO } from "./dockModules.js";
 import { FilesPanel } from "./FilesPanel.js";
 import { ModulePanel } from "./ModulePanel.js";
 import { TerminalPanel } from "./TerminalPanel.js";
 
 const MODULE_ICONS: Record<string, LucideIcon> = {
-  browser: Globe,
   analytics: ChartBar,
   music: Music2,
   calendar: CalendarDays,
@@ -133,6 +133,14 @@ export function DockPanels({
           A fixed set of read-only diagnostic commands — no free-text/arbitrary shell access.
         </p>
         <TerminalPanel />
+      </ModulePanel>
+    );
+  }
+
+  if (activeModule === "browser") {
+    return (
+      <ModulePanel title="Browser" icon={<Globe size={18} strokeWidth={2} />} onClose={onClose}>
+        <BrowserPanel />
       </ModulePanel>
     );
   }

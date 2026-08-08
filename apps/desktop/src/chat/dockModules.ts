@@ -13,11 +13,6 @@ export interface ModuleInfo {
  * docs/PROJECT_INDEX.md for what's actually built.
  */
 export const MODULE_INFO: Record<string, ModuleInfo> = {
-  browser: {
-    title: "Browser",
-    description: "There's no embedded browser or web-browsing capability inside Omnira yet.",
-    related: "With System Control permission granted, Omnira can open a URL in your default browser when you ask it to in chat.",
-  },
   analytics: {
     title: "Analytics",
     description: "Omnira doesn't collect or display usage analytics yet.",
