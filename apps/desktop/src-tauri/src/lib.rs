@@ -22,8 +22,54 @@ use tauri::Manager;
 /// background process every time Omnira closes.
 struct ApiProcess(Mutex<Option<Child>>);
 
+/// A hash of the exact frontend bundle this binary was compiled with —
+/// baked in at compile time from the real dist/index.html the build just
+/// produced (beforeBuildCommand runs vite build before cargo compiles).
+/// Used to detect a stale WebView2 cache; see clear_stale_webview_cache.
+fn frontend_content_hash() -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    include_str!("../../dist/index.html").hash(&mut hasher);
+    hasher.finish()
+}
+
+/// WebView2 persists its HTTP cache on disk across app restarts, keyed to
+/// this app's identifier — and it does not know when a *new install* has
+/// shipped a different index.html referencing new content-hashed JS/CSS
+/// filenames. A real bug hit in testing: after rebuilding with frontend
+/// changes and reinstalling, the app showed a totally blank window;
+/// DevTools' console showed "Failed to load module script... server
+/// responded with a MIME type of text/html" — WebView2 was serving a
+/// cached *old* index.html that referenced a JS filename the *new* build
+/// no longer has, and Tauri's asset protocol has no matching file to
+/// return other than an HTML fallback. Wiping the EBWebView cache
+/// whenever the compiled-in frontend hash changes since the last run
+/// fixes this permanently, not just for today's testing — every future
+/// update to the frontend hits this same risk otherwise.
+fn clear_stale_webview_cache() {
+    let Some(local_app_data) = std::env::var_os("LOCALAPPDATA") else {
+        return;
+    };
+    // Must match tauri.conf.json's "identifier".
+    let app_data_dir = std::path::Path::new(&local_app_data).join("com.omnira.desktop");
+    let marker_path = app_data_dir.join("frontend-hash.txt");
+    let current_hash = frontend_content_hash().to_string();
+
+    let is_stale = std::fs::read_to_string(&marker_path)
+        .map(|stored| stored.trim() != current_hash)
+        .unwrap_or(true);
+
+    if is_stale {
+        let _ = std::fs::remove_dir_all(app_data_dir.join("EBWebView"));
+        let _ = std::fs::create_dir_all(&app_data_dir);
+        let _ = std::fs::write(&marker_path, &current_hash);
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    clear_stale_webview_cache();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
@@ -105,13 +151,28 @@ fn spawn_api_server(app: &tauri::App) {
     let stdout_log = File::create(&log_path).ok();
     let stderr_log = stdout_log.as_ref().and_then(|f| f.try_clone().ok());
 
-    let spawned = Command::new(resolve_node_path())
+    let mut command = Command::new(resolve_node_path());
+    command
         .arg(format!("--env-file={}", env_file.display()))
         .arg(&entry)
         .current_dir(&api_dir)
         .stdout(stdout_log.map_or(Stdio::null(), Stdio::from))
-        .stderr(stderr_log.map_or(Stdio::null(), Stdio::from))
-        .spawn();
+        .stderr(stderr_log.map_or(Stdio::null(), Stdio::from));
+
+    // node.exe is a console-subsystem executable — Windows allocates it a
+    // brand new, visible console window on spawn by default, regardless of
+    // stdout/stderr redirection (that controls the streams, not whether a
+    // console host window gets created at all). CREATE_NO_WINDOW suppresses
+    // that allocation entirely, matching main.rs's windows_subsystem =
+    // "windows" for the app's own window.
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let spawned = command.spawn();
 
     match spawned {
         Ok(child) => {
