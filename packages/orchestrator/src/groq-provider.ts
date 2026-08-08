@@ -19,6 +19,22 @@ const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 const MAX_TOOL_ROUNDS = 3;
 
+/**
+ * Groq's own error code for "the model's constrained function-calling
+ * generation didn't produce valid output for the given tools" — a real,
+ * reproducible upstream failure (e.g. asking for something that doesn't
+ * map to any available tool, like "open my pc"), not a bug in how tools
+ * are declared here. The `code` check is the documented signal; the
+ * message substring is a defensive fallback in case Groq ever omits it.
+ */
+function isToolUseFailure(err: unknown): boolean {
+  if (err instanceof OpenAI.APIError) {
+    if (err.code === "tool_use_failed") return true;
+    if (err.status === 400 && err.message.includes("Failed to call a function")) return true;
+  }
+  return false;
+}
+
 export interface GroqProviderOptions {
   apiKey: string;
   model?: string;
@@ -111,12 +127,35 @@ export class GroqProvider implements ModelProvider {
     const toolCallsMade: string[] = [];
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const response = await this.client.chat.completions.create({
-        model: this.model,
-        messages,
-        tools,
-        tool_choice: "auto",
-      });
+      let response: OpenAI.ChatCompletion;
+      try {
+        response = await this.client.chat.completions.create({
+          model: this.model,
+          messages,
+          tools,
+          tool_choice: "auto",
+        });
+      } catch (err) {
+        if (!isToolUseFailure(err)) throw err;
+        // Groq's constrained decoding for function-calling occasionally
+        // fails outright for a given prompt/tool combination — a known
+        // upstream limitation (their own error literally says "please
+        // adjust your prompt"), not something retrying with the same
+        // tools reliably fixes. Degrade to a plain answer for this turn
+        // instead of surfacing that raw error to the user.
+        const fallback = await this.client.chat.completions.create({ model: this.model, messages });
+        const text = fallback.choices[0]?.message?.content ?? "";
+        onDelta({ text });
+        return {
+          text,
+          model: fallback.model,
+          usage: {
+            inputTokens: inputTokens + (fallback.usage?.prompt_tokens ?? 0),
+            outputTokens: outputTokens + (fallback.usage?.completion_tokens ?? 0),
+          },
+          toolCallsMade,
+        };
+      }
 
       model = response.model;
       inputTokens += response.usage?.prompt_tokens ?? 0;

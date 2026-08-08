@@ -3,10 +3,22 @@ import { UpstreamError } from "@omnira/core";
 
 const createMock = vi.fn();
 
+/** Mirrors the real SDK's APIError shape (status/code/message) closely enough for isToolUseFailure's instanceof + property checks. */
+class MockAPIError extends Error {
+  constructor(
+    message: string,
+    public status?: number,
+    public code?: string,
+  ) {
+    super(message);
+  }
+}
+
 vi.mock("openai", () => {
   return {
     default: class MockOpenAI {
       chat = { completions: { create: createMock } };
+      static APIError = MockAPIError;
     },
   };
 });
@@ -145,6 +157,40 @@ describe("GroqProvider", () => {
       const secondCallArgs = createMock.mock.calls[1]?.[0] as { messages: Array<{ role: string; content?: string }> };
       const toolResultMessage = secondCallArgs.messages.find((m) => m.role === "tool");
       expect(toolResultMessage?.content).toContain("service unavailable");
+    });
+
+    it("falls back to a plain answer when Groq's tool-calling generation itself fails, instead of throwing", async () => {
+      createMock
+        .mockRejectedValueOnce(new MockAPIError("Failed to call a function. Please adjust your prompt.", 400, "tool_use_failed"))
+        .mockResolvedValueOnce({
+          model: "llama-3.3-70b-versatile",
+          choices: [{ message: { role: "assistant", content: "I can't do that directly, but here's what I can help with..." } }],
+          usage: { prompt_tokens: 12, completion_tokens: 8 },
+        });
+
+      const executeTool = vi.fn();
+      const provider = new GroqProvider({ apiKey: "test-key" });
+      const collected: string[] = [];
+      const result = await provider.generateReply([{ role: "user", content: "can you open my pc?" }], (delta) => collected.push(delta.text), {
+        tools,
+        executeTool,
+      });
+
+      expect(executeTool).not.toHaveBeenCalled();
+      expect(result.text).toBe("I can't do that directly, but here's what I can help with...");
+      expect(collected).toEqual([result.text]);
+      // The retry must drop `tools`/`tool_choice` entirely, not just resend the same failing request.
+      const retryArgs = createMock.mock.calls[1]?.[0] as { tools?: unknown };
+      expect(retryArgs.tools).toBeUndefined();
+    });
+
+    it("still throws a real, unrelated API error instead of masking it as a tool-use failure", async () => {
+      createMock.mockRejectedValue(new MockAPIError("Invalid API key", 401, "invalid_api_key"));
+      const provider = new GroqProvider({ apiKey: "bad-key" });
+
+      await expect(
+        provider.generateReply([{ role: "user", content: "hi" }], () => {}, { tools, executeTool: vi.fn() }),
+      ).rejects.toBeInstanceOf(UpstreamError);
     });
 
     it("gives up after the maximum number of tool round-trips rather than looping forever", async () => {
