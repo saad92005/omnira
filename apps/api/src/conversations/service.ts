@@ -8,7 +8,18 @@ export interface ConversationSummary {
   updatedAt: Date;
 }
 
+export interface UsageSummary {
+  totalConversations: number;
+  totalMessages: number;
+  messagesLast7Days: number;
+  firstActivityAt: Date | null;
+  /** Oldest to newest, always exactly 7 entries (today inclusive), zero-filled for days with no messages. */
+  messagesByDay: Array<{ date: string; count: number }>;
+}
+
 const TITLE_MAX_LENGTH = 60;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TREND_DAYS = 7;
 
 export class ConversationsService {
   constructor(private readonly db: PrismaClient) {}
@@ -76,5 +87,48 @@ export class ConversationsService {
         ...(conversation?.title ? {} : { title: userMessage.slice(0, TITLE_MAX_LENGTH) }),
       },
     });
+  }
+
+  /**
+   * Real usage numbers only — everything here comes straight from
+   * Conversation/Message rows this user owns. Deliberately doesn't report on
+   * automations, agent-persona choice, terminal runs, or browser opens: none
+   * of those are persisted server-side today (see ADR discussion in
+   * dockModules.ts on the desktop side), so making up a number for them
+   * would be exactly the fabricated-feature problem this project avoids.
+   */
+  async getUsageSummary(userId: string): Promise<UsageSummary> {
+    const now = new Date();
+    const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const trendStart = new Date(startOfToday.getTime() - (TREND_DAYS - 1) * DAY_MS);
+
+    const [totalConversations, totalMessages, recentMessages, firstConversation] = await Promise.all([
+      this.db.conversation.count({ where: { userId } }),
+      this.db.message.count({ where: { conversation: { userId } } }),
+      this.db.message.findMany({
+        where: { conversation: { userId }, createdAt: { gte: trendStart } },
+        select: { createdAt: true },
+      }),
+      this.db.conversation.findFirst({ where: { userId }, orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
+    ]);
+
+    const countsByDate = new Map<string, number>();
+    for (const { createdAt } of recentMessages) {
+      const key = createdAt.toISOString().slice(0, 10);
+      countsByDate.set(key, (countsByDate.get(key) ?? 0) + 1);
+    }
+
+    const messagesByDay = Array.from({ length: TREND_DAYS }, (_, i) => {
+      const key = new Date(trendStart.getTime() + i * DAY_MS).toISOString().slice(0, 10);
+      return { date: key, count: countsByDate.get(key) ?? 0 };
+    });
+
+    return {
+      totalConversations,
+      totalMessages,
+      messagesLast7Days: recentMessages.length,
+      firstActivityAt: firstConversation?.createdAt ?? null,
+      messagesByDay,
+    };
   }
 }

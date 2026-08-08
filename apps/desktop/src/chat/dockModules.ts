@@ -13,10 +13,6 @@ export interface ModuleInfo {
  * docs/PROJECT_INDEX.md for what's actually built.
  */
 export const MODULE_INFO: Record<string, ModuleInfo> = {
-  analytics: {
-    title: "Analytics",
-    description: "Omnira doesn't collect or display usage analytics yet.",
-  },
   music: {
     title: "Music",
     description: "There's no music playback or streaming-service integration yet.",

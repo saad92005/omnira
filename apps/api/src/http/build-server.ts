@@ -14,6 +14,7 @@ import { registerChatRoutes } from "../routes/chat.js";
 import { registerVoiceRoutes } from "../routes/voice.js";
 import { registerNewsRoutes } from "../routes/news.js";
 import { registerAgentRoutes } from "../routes/agents.js";
+import { registerAnalyticsRoutes } from "../routes/analytics.js";
 
 export interface AppDependencies {
   config: AppConfig;
@@ -89,6 +90,7 @@ export function buildServer(deps: AppDependencies): FastifyInstance {
       registerVoiceRoutes(v1, deps.config, permissionsService);
       registerNewsRoutes(v1, deps.config);
       registerAgentRoutes(v1, deps.config);
+      registerAnalyticsRoutes(v1, deps.config, conversationsService);
     },
     { prefix: "/v1" },
   );

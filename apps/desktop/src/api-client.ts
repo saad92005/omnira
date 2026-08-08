@@ -234,6 +234,18 @@ export async function getNewsHeadlines(): Promise<NewsHeadline[]> {
   return result.headlines;
 }
 
+export interface AnalyticsSummary {
+  totalConversations: number;
+  totalMessages: number;
+  messagesLast7Days: number;
+  firstActivityAt: string | null;
+  messagesByDay: Array<{ date: string; count: number }>;
+}
+
+export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
+  return request<AnalyticsSummary>("/analytics/summary");
+}
+
 const AUDIO_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
   "audio/webm": "webm",
   "audio/mp4": "m4a",

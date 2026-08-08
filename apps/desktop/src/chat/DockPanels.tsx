@@ -18,6 +18,7 @@ import { Button } from "@omnira/ui-kit";
 import type { AgentPersonaSummary, ConversationSummary } from "../api-client.js";
 import type { UseAutomationsResult } from "../hooks/useAutomations.js";
 import { AgentsPanel } from "./AgentsPanel.js";
+import { AnalyticsPanel } from "./AnalyticsPanel.js";
 import { AutomationsPanel } from "./AutomationsPanel.js";
 import { BrowserPanel } from "./BrowserPanel.js";
 import { MODULE_INFO } from "./dockModules.js";
@@ -26,7 +27,6 @@ import { ModulePanel } from "./ModulePanel.js";
 import { TerminalPanel } from "./TerminalPanel.js";
 
 const MODULE_ICONS: Record<string, LucideIcon> = {
-  analytics: ChartBar,
   music: Music2,
   calendar: CalendarDays,
 };
@@ -141,6 +141,14 @@ export function DockPanels({
     return (
       <ModulePanel title="Browser" icon={<Globe size={18} strokeWidth={2} />} onClose={onClose}>
         <BrowserPanel />
+      </ModulePanel>
+    );
+  }
+
+  if (activeModule === "analytics") {
+    return (
+      <ModulePanel title="Analytics" icon={<ChartBar size={18} strokeWidth={2} />} onClose={onClose}>
+        <AnalyticsPanel />
       </ModulePanel>
     );
   }
