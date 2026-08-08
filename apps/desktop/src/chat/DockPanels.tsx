@@ -21,15 +21,14 @@ import { AgentsPanel } from "./AgentsPanel.js";
 import { AnalyticsPanel } from "./AnalyticsPanel.js";
 import { AutomationsPanel } from "./AutomationsPanel.js";
 import { BrowserPanel } from "./BrowserPanel.js";
+import { CalendarPanel } from "./CalendarPanel.js";
 import { MODULE_INFO } from "./dockModules.js";
 import { FilesPanel } from "./FilesPanel.js";
 import { ModulePanel } from "./ModulePanel.js";
+import { MusicPanel } from "./MusicPanel.js";
 import { TerminalPanel } from "./TerminalPanel.js";
 
-const MODULE_ICONS: Record<string, LucideIcon> = {
-  music: Music2,
-  calendar: CalendarDays,
-};
+const MODULE_ICONS: Record<string, LucideIcon> = {};
 
 export interface DockPanelsProps extends UseAutomationsResult {
   activeModule: string | null;
@@ -149,6 +148,22 @@ export function DockPanels({
     return (
       <ModulePanel title="Analytics" icon={<ChartBar size={18} strokeWidth={2} />} onClose={onClose}>
         <AnalyticsPanel />
+      </ModulePanel>
+    );
+  }
+
+  if (activeModule === "music") {
+    return (
+      <ModulePanel title="Music" icon={<Music2 size={18} strokeWidth={2} />} onClose={onClose}>
+        <MusicPanel />
+      </ModulePanel>
+    );
+  }
+
+  if (activeModule === "calendar") {
+    return (
+      <ModulePanel title="Calendar" icon={<CalendarDays size={18} strokeWidth={2} />} onClose={onClose}>
+        <CalendarPanel />
       </ModulePanel>
     );
   }

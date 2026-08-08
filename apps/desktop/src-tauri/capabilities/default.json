@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Read-only filesystem listing of a fixed set of user folders (Desktop, Documents, Downloads, Home), plus opening a file/folder with the OS default handler — backs the Files dock panel. No write access from this surface; the existing chat-driven create-file/create-folder tool (apps/api) is a separate, already-scoped path. shell:allow-execute below is a fixed, named allowlist of read-only diagnostic commands (whoami, hostname, ipconfig, systeminfo, tasklist, netstat, ver) with no user-supplied arguments at all — backs the Terminal dock panel as a diagnostics tool, deliberately not arbitrary/free-text command execution. core:webview:allow-create-webview-window lets the main window (trusted, our own React code) open a new real browser window for the Browser dock panel — deliberately scoped to `windows: [main]` only, so that spawned browser window (which renders arbitrary third-party sites) is NOT itself granted any of these capabilities; it gets Tauri's default-deny. core:window:allow-get-all-windows and core:window:allow-close back the 'reuse one browser window' logic (look up the existing omnira-browser window by label, close it before opening the next URL) — neither takes a pre-configured scope in Tauri, but since only main and omnira-browser ever exist and the browser window itself has no capabilities, this only ever lets the trusted main window enumerate/close its own single spawned child.",
+  "description": "Read-only filesystem listing of a fixed set of user folders (Desktop, Documents, Downloads, Home), plus opening a file/folder with the OS default handler — backs the Files dock panel. No write access from this surface; the existing chat-driven create-file/create-folder tool (apps/api) is a separate, already-scoped path. shell:allow-execute below is a fixed, named allowlist of read-only diagnostic commands (whoami, hostname, ipconfig, systeminfo, tasklist, netstat, ver) with no user-supplied arguments at all — backs the Terminal dock panel as a diagnostics tool, deliberately not arbitrary/free-text command execution. core:webview:allow-create-webview-window lets the main window (trusted, our own React code) open a new real browser window for the Browser dock panel — deliberately scoped to `windows: [main]` only, so that spawned browser window (which renders arbitrary third-party sites) is NOT itself granted any of these capabilities; it gets Tauri's default-deny. core:window:allow-get-all-windows and core:window:allow-close back the 'reuse one browser window' logic (look up the existing omnira-browser window by label, close it before opening the next URL) — neither takes a pre-configured scope in Tauri, but since only main and omnira-browser ever exist and the browser window itself has no capabilities, this only ever lets the trusted main window enumerate/close its own single spawned child. The scoped opener:allow-open-url grant backs the Calendar/Music 'Connect' buttons: Google's and Spotify's own OAuth consent screens refuse to render inside an embedded webview (Google actively blocks it), so those flows open in the user's real system browser via the OS opener instead of a Tauri WebviewWindow — scoped to exactly the two providers' auth domains, not an open 'launch any URL' grant.",
   "windows": ["main"],
   "permissions": [
     {
@@ -30,6 +30,10 @@
     "core:webview:allow-create-webview-window",
     "core:window:allow-get-all-windows",
     "core:window:allow-close",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://accounts.google.com/*" }, { "url": "https://accounts.spotify.com/*" }]
+    },
     {
       "identifier": "shell:allow-execute",
       "allow": [

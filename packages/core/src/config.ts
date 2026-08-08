@@ -40,6 +40,14 @@ const envSchema = z
       .union([z.boolean(), z.enum(["true", "false"])])
       .default(true)
       .transform((v) => v === true || v === "true"),
+    /** Google Calendar OAuth (Calendar dock panel) — optional; that integration's routes fail loudly, not silently, when unset. */
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+    /** Spotify OAuth (Music dock panel) — optional; that integration's routes fail loudly, not silently, when unset. */
+    SPOTIFY_CLIENT_ID: z.string().min(1).optional(),
+    SPOTIFY_CLIENT_SECRET: z.string().min(1).optional(),
+    /** Symmetric key (any length string, SHA-256'd into an AES-256 key — see integrations/crypto.ts) for encrypting stored OAuth tokens at rest. Required only once GOOGLE_CLIENT_ID or SPOTIFY_CLIENT_ID is set. */
+    INTEGRATION_ENCRYPTION_KEY: z.string().min(16, "INTEGRATION_ENCRYPTION_KEY must be at least 16 characters").optional(),
   })
   // Host platforms (Render, Railway, ...) inject PORT and expect the app to
   // bind to it; PORT wins over API_PORT when both are present, and is

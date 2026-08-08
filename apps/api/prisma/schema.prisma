@@ -33,9 +33,10 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 
-  refreshTokens    RefreshToken[]
-  permissionGrants PermissionGrant[]
-  conversations    Conversation[]
+  refreshTokens          RefreshToken[]
+  permissionGrants       PermissionGrant[]
+  conversations          Conversation[]
+  integrationConnections IntegrationConnection[]
 
   @@map("users")
 }
@@ -103,4 +104,42 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+/// A live OAuth connection to an external provider (Google Calendar, Spotify).
+/// `accessToken`/`refreshToken` are AES-256-GCM ciphertext, never plaintext
+/// — see apps/api/src/integrations/crypto.ts. One row per (user, provider);
+/// reconnecting overwrites it rather than accumulating history.
+model IntegrationConnection {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "google_calendar" | "spotify" — see apps/api/src/integrations/providers.ts
+  provider     String
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime
+  scope        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, provider])
+  @@map("integration_connections")
+}
+
+/// Bridges the OAuth `/connect` redirect to its `/callback` — can't hold this
+/// in memory because apps/api runs as Netlify Functions in production (see
+/// db.ts), where the two requests can land on unrelated Lambda instances.
+/// Consumed (deleted) by the callback, or by anything hitting an expired row.
+model OAuthState {
+  state        String   @id
+  userId       String
+  provider     String
+  /// PKCE code_verifier (S256) — the callback exchanges it for the token, so a
+  /// stolen `code` alone (e.g. via a leaky redirect) can't be redeemed by anyone else.
+  codeVerifier String
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  @@map("oauth_states")
 }

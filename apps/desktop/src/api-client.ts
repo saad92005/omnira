@@ -246,6 +246,55 @@ export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
   return request<AnalyticsSummary>("/analytics/summary");
 }
 
+export type IntegrationProvider = "google_calendar" | "spotify";
+
+export interface IntegrationStatus {
+  connected: boolean;
+  scope: string | null;
+  expiresAt: string | null;
+}
+
+export async function getIntegrationConnectUrl(provider: IntegrationProvider): Promise<string> {
+  const result = await request<{ url: string }>(`/integrations/${provider}/connect`);
+  return result.url;
+}
+
+export async function getIntegrationStatus(provider: IntegrationProvider): Promise<IntegrationStatus> {
+  return request<IntegrationStatus>(`/integrations/${provider}/status`);
+}
+
+export async function disconnectIntegration(provider: IntegrationProvider): Promise<void> {
+  await request(`/integrations/${provider}/disconnect`, { method: "POST" });
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  location: string | null;
+}
+
+export async function getCalendarEvents(): Promise<CalendarEvent[]> {
+  const result = await request<{ events: CalendarEvent[] }>("/integrations/google_calendar/events");
+  return result.events;
+}
+
+export interface NowPlaying {
+  isPlaying: boolean;
+  trackName: string;
+  artistName: string;
+  albumArtUrl: string | null;
+  progressMs: number | null;
+  durationMs: number | null;
+}
+
+export async function getSpotifyNowPlaying(): Promise<NowPlaying | null> {
+  const result = await request<{ nowPlaying: NowPlaying | null }>("/integrations/spotify/now-playing");
+  return result.nowPlaying;
+}
+
 const AUDIO_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
   "audio/webm": "webm",
   "audio/mp4": "m4a",

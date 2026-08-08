@@ -44,9 +44,10 @@ const ITEMS: DockItem[] = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-// Backed by real, working functionality — everything else opens an honest
-// "not connected yet" info panel instead (see dockModules.ts), but every
-// icon here responds to a click; none are dead buttons.
+// Backed by real, working functionality. Every dock icon currently is (see
+// dockModules.ts's MODULE_INFO, which is empty for the same reason) — the
+// `!real` branch below stays as the mechanism for the next icon that isn't,
+// rather than being deleted along with the last placeholder.
 const REAL_FEATURE = new Set([
   "chat",
   "voice",
@@ -59,14 +60,16 @@ const REAL_FEATURE = new Set([
   "agents",
   "browser",
   "analytics",
+  "music",
+  "calendar",
 ]);
 
 /**
- * A macOS-style rounded glass dock. Every icon is interactive — the ones
- * backed by real functionality act on it directly (voice mode, memory,
- * settings); the rest open a small honest panel explaining what's not
- * built yet rather than sitting there disabled. See the redesign brief:
- * frontend/UX only, no fabricated features.
+ * A macOS-style rounded glass dock. Every icon is interactive and, today,
+ * backed by real functionality; a future non-real icon would instead open a
+ * small honest panel explaining what's not built yet rather than sitting
+ * there disabled. See the redesign brief: frontend/UX only, no fabricated
+ * features.
  */
 export function Dock({ activeId, voiceMode, onSelect }: DockProps): ReactNode {
   return (

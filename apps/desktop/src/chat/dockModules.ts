@@ -11,14 +11,9 @@ export interface ModuleInfo {
  * fabricated feature. `related` calls out an actual adjacent capability
  * where one exists, so the panel doesn't just say "no" — see
  * docs/PROJECT_INDEX.md for what's actually built.
+ *
+ * Empty today: every dock icon is backed by real functionality (see
+ * Dock.tsx's REAL_FEATURE set). Kept as the mechanism for the next one that
+ * isn't, rather than deleted.
  */
-export const MODULE_INFO: Record<string, ModuleInfo> = {
-  music: {
-    title: "Music",
-    description: "There's no music playback or streaming-service integration yet.",
-  },
-  calendar: {
-    title: "Calendar",
-    description: "Omnira isn't connected to a calendar yet — this needs a real calendar-account integration.",
-  },
-};
+export const MODULE_INFO: Record<string, ModuleInfo> = {};

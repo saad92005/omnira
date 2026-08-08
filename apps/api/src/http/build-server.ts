@@ -7,6 +7,7 @@ import type { PrismaClient } from "../db.js";
 import { AuthService } from "../auth/service.js";
 import { PermissionsService } from "../permissions/service.js";
 import { ConversationsService } from "../conversations/service.js";
+import { IntegrationsService } from "../integrations/oauth-service.js";
 import { registerHealthRoutes } from "../routes/health.js";
 import { registerAuthRoutes } from "../routes/auth.js";
 import { registerPermissionRoutes } from "../routes/permissions.js";
@@ -15,6 +16,7 @@ import { registerVoiceRoutes } from "../routes/voice.js";
 import { registerNewsRoutes } from "../routes/news.js";
 import { registerAgentRoutes } from "../routes/agents.js";
 import { registerAnalyticsRoutes } from "../routes/analytics.js";
+import { registerIntegrationRoutes } from "../routes/integrations.js";
 
 export interface AppDependencies {
   config: AppConfig;
@@ -79,6 +81,7 @@ export function buildServer(deps: AppDependencies): FastifyInstance {
   const authService = new AuthService(deps.db, { jwtAccessSecret: deps.config.JWT_ACCESS_SECRET });
   const permissionsService = new PermissionsService(deps.db);
   const conversationsService = new ConversationsService(deps.db);
+  const integrationsService = new IntegrationsService(deps.db, deps.config.INTEGRATION_ENCRYPTION_KEY);
 
   app.register(
     async (v1) => {
@@ -91,6 +94,7 @@ export function buildServer(deps: AppDependencies): FastifyInstance {
       registerNewsRoutes(v1, deps.config);
       registerAgentRoutes(v1, deps.config);
       registerAnalyticsRoutes(v1, deps.config, conversationsService);
+      registerIntegrationRoutes(v1, deps.config, integrationsService);
     },
     { prefix: "/v1" },
   );
