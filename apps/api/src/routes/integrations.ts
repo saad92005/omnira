@@ -10,7 +10,11 @@ import { requireAuth } from "../http/authenticate.js";
 const providerParam = z.object({ provider: z.enum(["google_calendar", "spotify"]) });
 
 function apiOrigin(config: AppConfig): string {
-  return config.PUBLIC_WEB_ORIGIN ?? `http://localhost:${config.API_PORT}`;
+  // The literal loopback IP, not the "localhost" hostname — Spotify's OAuth
+  // app dashboard rejects http://localhost redirect URIs as "not secure"
+  // and requires 127.0.0.1 specifically (RFC 8252's recommendation for
+  // native-app loopback redirects, which Google accepts too).
+  return config.PUBLIC_WEB_ORIGIN ?? `http://127.0.0.1:${config.API_PORT}`;
 }
 
 function confirmationPage(title: string, body: string): string {

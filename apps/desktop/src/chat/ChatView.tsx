@@ -101,6 +101,28 @@ export function ChatView(): ReactNode {
     didLogBoot.current = true;
     log("Omnira online");
 
+    // The desktop app auto-starts apps/api itself (see src-tauri/lib.rs) —
+    // node needs a moment to bind its port after the window appears, so a
+    // cold launch can lose this very first request to that race. Retry
+    // briefly instead of leaving the HUD stuck on "disconnected" for a
+    // server that's still just starting up; later refreshes (e.g. after
+    // sending a message) go through the plain single-shot refreshConversations.
+    let cancelled = false;
+    const connectWithRetry = (attempt = 0): void => {
+      listConversations()
+        .then((list) => {
+          if (cancelled) return;
+          setConversations(list);
+          setApiReachable(true);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          if (attempt < 6) setTimeout(() => connectWithRetry(attempt + 1), 700);
+          else setApiReachable(false);
+        });
+    };
+    connectWithRetry();
+
     isVoiceAvailable()
       .then((granted) => {
         setMicGranted(granted);
@@ -110,7 +132,6 @@ export function ChatView(): ReactNode {
     getActiveCapabilities()
       .then((active) => setSystemControlGranted(active.has("system_control")))
       .catch(() => undefined);
-    refreshConversations();
     // Best-effort and silent: a denied location prompt or offline moment
     // just means no weather widget, never an error banner over something
     // this ambient.
@@ -125,7 +146,11 @@ export function ChatView(): ReactNode {
       .then(setAgents)
       .catch(() => undefined)
       .finally(() => setAgentsLoaded(true));
-  }, [refreshConversations, log]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [log]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
