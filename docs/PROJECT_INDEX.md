@@ -2,7 +2,7 @@
 
 > Source of truth for current project state. Read this first at the start of
 > every session — do not re-derive state from guessing. Standing constitution:
-> [`/CLAUDE_MASTER_PROMPT.md`](../CLAUDE_MASTER_PROMPT.md).
+> [`/docs/SPECIFICATION.md`](SPECIFICATION.md).
 
 ## Current Phase
 
@@ -79,7 +79,7 @@ owner's decision on whether to proceed to Phase 1.
 
 ## Not Started
 
-Phases 1–6 per `/CLAUDE_MASTER_PROMPT.md` §2.3: Desktop Companion (file
+Phases 1–6 per `/docs/SPECIFICATION.md` §2.3: Desktop Companion (file
 intelligence, app launching, window/clipboard control), Multi-Agent Core,
 Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
 
@@ -156,7 +156,7 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
 
 ## Next Session Should Start With
 
-1. Read this file and `/CLAUDE_MASTER_PROMPT.md` in full.
+1. Read this file and `/docs/SPECIFICATION.md` in full.
 2. Optional polish: smoke-test real audio through `/v1/voice/transcribe`,
    replace the placeholder app icons with real artwork, add CI, persist the
    "has completed onboarding" flag (Known Issue #5).

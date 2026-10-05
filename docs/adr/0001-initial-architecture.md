@@ -11,7 +11,7 @@ Omnira is specified in the master prompt as a commercial-grade, multi-phase plat
 (desktop AI companion → multi-agent core → browser automation → coding assistant →
 multi-tenant SaaS). It must be built phase by phase, never all at once, with a
 persistent project index and ADR log as the source of truth across sessions
-(`omnira/CLAUDE_MASTER_PROMPT.md`, Sections 1, 17).
+(`omnira/docs/SPECIFICATION.md`, Sections 1, 17).
 
 Before any implementation, the following foundational decisions must be locked in
 because they touch every package in the monorepo and are expensive to reverse later:

@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. Format foll
 
 ### Added
 
-- Project governance scaffolding: `/CLAUDE_MASTER_PROMPT.md`,
+- Project governance scaffolding: `/docs/SPECIFICATION.md`,
   `/docs/PROJECT_INDEX.md`, ADR-0001 through ADR-0005.
 - **Phase 0 (Foundation) — full implementation:**
   - Monorepo scaffold: pnpm workspaces + Turborepo, strict TypeScript,
