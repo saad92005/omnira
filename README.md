@@ -5,7 +5,7 @@ on your computer, but only through capabilities you have explicitly granted.
 
 [![CI](https://github.com/saad92005/omnira/actions/workflows/ci.yml/badge.svg)](https://github.com/saad92005/omnira/actions/workflows/ci.yml)
 
-**Web build:** [omnira.netlify.app](https://omnira.netlify.app) (system control is disabled on the public deployment, see below)
+**Deployment:** Netlify (web build + API as Netlify Functions); system control is disabled on any public deployment, see below.
 
 ## Overview
 
