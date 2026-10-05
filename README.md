@@ -1,11 +1,69 @@
 # Omnira
 
-"One Intelligence. Infinite Possibilities." — see
-[`CLAUDE_MASTER_PROMPT.md`](CLAUDE_MASTER_PROMPT.md) for the full product/technical
-specification and [`docs/PROJECT_INDEX.md`](docs/PROJECT_INDEX.md) for current
-status.
+**A permission-gated AI desktop agent.** It chats, listens, speaks and acts
+on your computer, but only through capabilities you have explicitly granted.
 
-## Phase 0 quickstart
+[![CI](https://github.com/saad92005/omnira/actions/workflows/ci.yml/badge.svg)](https://github.com/saad92005/omnira/actions/workflows/ci.yml)
+
+**Web build:** [omnira.netlify.app](https://omnira.netlify.app) (system control is disabled on the public deployment, see below)
+
+## Overview
+
+Omnira is an AI assistant that runs as a native desktop app (Tauri) backed by
+a TypeScript API. The design goal is an assistant that can *do* things,
+like opening apps and URLs, creating files and setting timers, without being
+handed blanket access to the machine:
+
+- **Capability-based permissions.** Every side-effecting tool sits behind a
+  capability (for example `SystemControl` or the microphone) that the user
+  grants and can revoke. An ungranted capability means the model is never
+  even offered that tool.
+- **Tool calling with a server/client split.** Tools that act on the host
+  (`open_app`, `open_url`, `create_file`, `create_folder`) run in the API.
+  Effects only the browser can perform (`set_timer`, `copy_to_clipboard`,
+  conversation export) are returned as *client actions* (ADR-0008).
+- **Vendor-agnostic LLM layer.** `packages/orchestrator` defines a
+  `ModelProvider` interface. Groq (Llama 3.3 70B) is the current
+  implementation, and speech-to-text is a separate provider (Groq Whisper).
+- **Voice loop.** Speak → transcribe → act → spoken reply, using browser
+  `speechSynthesis` for text-to-speech, so it needs no paid API.
+- **Integrations.** Google Calendar and Spotify over OAuth with PKCE. OAuth
+  tokens are encrypted at rest with AES-256-GCM.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client
+      D[Desktop app<br/>Tauri + React] --- W[Web / PWA build]
+    end
+    D -->|REST + JWT| API[apps/api<br/>Fastify]
+    W -->|REST + JWT| API
+    API --> AG[packages/agents<br/>ChatAgent + tools]
+    AG --> OR[packages/orchestrator<br/>ModelProvider → Groq]
+    API --> VO[packages/voice<br/>STT → Groq Whisper]
+    API --> PERM[Permission service<br/>capability grants]
+    API --> DB[(PostgreSQL<br/>Prisma)]
+    API --> INT[Google Calendar / Spotify<br/>OAuth + PKCE]
+```
+
+Key decisions are recorded as ADRs in [`docs/adr/`](docs/adr), covering
+architecture, the ORM, the LLM and speech vendors, free-tier providers, tool
+calling and system control, and client actions. Current status is tracked in
+[`docs/PROJECT_INDEX.md`](docs/PROJECT_INDEX.md).
+
+## Tech stack
+
+| Layer | Technologies |
+|---|---|
+| Desktop / web | Tauri 2 (Rust), React, Vite, PWA manifest |
+| Backend | Node.js, Fastify, Prisma, JWT access + rotating refresh tokens |
+| AI | Groq (Llama 3.3 70B chat, Whisper speech-to-text), tool calling |
+| Data | PostgreSQL (Neon in production, Docker locally) |
+| Tooling | pnpm workspaces, Turborepo, TypeScript (strict), ESLint, Vitest |
+| Deployment | Netlify (static web + Fastify as Netlify Functions), NSIS/MSI installers |
+
+## Getting started
 
 Prerequisites: Node.js ≥20, [pnpm](https://pnpm.io), a Postgres database
 (either Docker locally, or a free hosted one — see below), and — only if you
