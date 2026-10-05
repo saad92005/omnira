@@ -17,7 +17,7 @@ screen, expanded system control (`create_file`/`create_folder`, ADR-0007),
 a real system prompt (persona, spoken-confirmation style, Roman Urdu
 support), a persisted voice-mode toggle that closes the speak → act → hear
 loop, and a PWA manifest/service worker so the web build is installable on
-mobile; "Phase 10" — **actually deployed publicly**, not just PWA-ready:
+mobile; "Phase 10" — **built for public deployment** (not currently hosted; see the 2026-10 note below), not just PWA-ready:
 `apps/api` now also runs as Netlify Functions (a genuinely difficult port —
 see `apps/api/src/db.ts` and `netlify.toml` for the Prisma/serverless
 bundling fixes, verified by running Netlify's real build pipeline locally
@@ -163,3 +163,7 @@ Browser & Automation, Coding Assistant, SaaS Platform, Scale & Compliance.
 3. Otherwise: write the Phase 1 (Desktop Companion) feature doc under
    `/docs/features/` and confirm scope with the project owner before
    implementing, per the master prompt's mandatory phased workflow (§17).
+
+## Note (2026-10)
+
+Omnira is not currently hosted anywhere; it runs on localhost. The Netlify setup still builds, but there is no live public URL.

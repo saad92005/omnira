@@ -5,7 +5,7 @@ on your computer, but only through capabilities you have explicitly granted.
 
 [![CI](https://github.com/saad92005/omnira/actions/workflows/ci.yml/badge.svg)](https://github.com/saad92005/omnira/actions/workflows/ci.yml)
 
-**Deployment:** Netlify (web build + API as Netlify Functions); system control is disabled on any public deployment, see below.
+**Status:** runs locally as a desktop app (Tauri) or in the browser (Vite). There is no public deployment right now; the Netlify configuration under [Public deployment](#public-deployment-mobile--any-browser) is ready if you want to host it.
 
 ## Overview
 
@@ -195,6 +195,8 @@ to be deployed somewhere reachable from that device (a real host, not
 see "Public deployment" below.
 
 ## Public deployment (mobile + any browser)
+
+> Not currently hosted. These are the steps to host your own copy.
 
 For Omnira to be reachable from a phone, two things need to be hosted
 publicly instead of running on `localhost`: `apps/api` (the backend) and
