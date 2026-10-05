@@ -16,7 +16,9 @@ import type {
  * required, hosts open models (Llama, Gemma, etc.) rather than Claude.
  */
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
-const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+// Groq retired its hosted Llama 3.x models in 2026; gpt-oss-120b supports tool
+// calling and is on the free tier. Override with GROQ_MODEL without a code change.
+const DEFAULT_MODEL = "openai/gpt-oss-120b";
 const MAX_TOOL_ROUNDS = 3;
 
 /**

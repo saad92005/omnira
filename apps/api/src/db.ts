@@ -1,4 +1,5 @@
 import { PrismaNeonHTTP } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 // Generated into src/generated/prisma (schema.prisma's generator `output`)
 // instead of the default node_modules/@prisma/client location — see the
 // comment there for why: pnpm's node_modules/.prisma symlink structure was
@@ -20,8 +21,31 @@ import { PrismaClient } from "./generated/prisma/client.js";
  * HTTP driver supports; if that ever changes, this needs to change too.
  */
 export function createDbClient(databaseUrl: string): PrismaClient {
-  const adapter = new PrismaNeonHTTP(databaseUrl, {});
+  const adapter = isNeonUrl(databaseUrl)
+    ? new PrismaNeonHTTP(databaseUrl, {})
+    : // Neon's HTTP driver only speaks to Neon's HTTP endpoint, so a plain
+      // Postgres (the docker-compose `db` service, CI, a self-hosted server)
+      // needs the standard TCP driver instead. Same Prisma client either way.
+      new PrismaPg({ connectionString: databaseUrl }, schemaOption(databaseUrl));
   return new PrismaClient({ adapter });
+}
+
+export function isNeonUrl(databaseUrl: string): boolean {
+  try {
+    return new URL(databaseUrl).hostname.endsWith(".neon.tech");
+  } catch {
+    return false;
+  }
+}
+
+/** Honours Prisma's `?schema=` URL parameter, which the pg adapter doesn't read itself. */
+function schemaOption(databaseUrl: string): { schema: string } | undefined {
+  try {
+    const schema = new URL(databaseUrl).searchParams.get("schema");
+    return schema ? { schema } : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export type { PrismaClient } from "./generated/prisma/client.js";

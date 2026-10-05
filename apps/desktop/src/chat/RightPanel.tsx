@@ -121,7 +121,7 @@ export function RightPanel({
           <span className="omnira-hud-indicator" data-active="true">
             <Terminal size={11} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
-            Groq · Llama 3.3
+            Groq · GPT-OSS
           </span>
           <span className="omnira-hud-indicator" data-active="true" title="The active agent persona">
             <Bot size={11} strokeWidth={2} aria-hidden="true" />

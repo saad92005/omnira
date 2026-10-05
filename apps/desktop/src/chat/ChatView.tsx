@@ -412,7 +412,7 @@ export function ChatView(): ReactNode {
           <span className="omnira-hud-indicator" data-active="true">
             <Terminal size={12} strokeWidth={2} aria-hidden="true" />
             <span className="omnira-hud-indicator__dot" aria-hidden="true" />
-            Groq · Llama 3.3
+            Groq · GPT-OSS
           </span>
           <span className="omnira-hud-indicator" data-active={systemControlGranted}>
             <ShieldCheck size={12} strokeWidth={2} aria-hidden="true" />

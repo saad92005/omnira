@@ -15,6 +15,7 @@ const envSchema = z
     JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
     /** Chat + speech-to-text (ADR-0005) — optional; those routes fail loudly, not silently, when unset. */
     GROQ_API_KEY: z.string().min(1).optional(),
+    GROQ_MODEL: z.string().min(1).optional(),
     API_PORT: z.coerce.number().int().positive().default(4000),
     /** Host-assigned port (Render, Railway, etc. all inject this) — wins over API_PORT when set. */
     PORT: z.coerce.number().int().positive().optional(),

@@ -23,12 +23,25 @@ handed blanket access to the machine:
   Effects only the browser can perform (`set_timer`, `copy_to_clipboard`,
   conversation export) are returned as *client actions* (ADR-0008).
 - **Vendor-agnostic LLM layer.** `packages/orchestrator` defines a
-  `ModelProvider` interface. Groq (Llama 3.3 70B) is the current
+  `ModelProvider` interface. Groq (`openai/gpt-oss-120b` by default, overridable with `GROQ_MODEL`) is the current
   implementation, and speech-to-text is a separate provider (Groq Whisper).
 - **Voice loop.** Speak → transcribe → act → spoken reply, using browser
   `speechSynthesis` for text-to-speech, so it needs no paid API.
 - **Integrations.** Google Calendar and Spotify over OAuth with PKCE. OAuth
   tokens are encrypted at rest with AES-256-GCM.
+
+## Screenshots
+
+<table>
+<tr>
+<td width="62%"><img src="docs/screenshots/chat-tool-call.png" alt="Omnira chat: a request to set a timer is executed as a tool call and answered with a checklist"></td>
+<td><img src="docs/screenshots/permission-onboarding.png" alt="Onboarding: the user decides which capabilities Omnira gets before the first chat"></td>
+</tr>
+<tr>
+<td><sub>One request runs a <code>set_timer</code> tool call and is answered in the same turn. The status bar shows the active model, and the live log records every step.</sub></td>
+<td><sub>Capabilities are opt-in before the first chat. Without <i>System control</i>, the model is never offered those tools.</sub></td>
+</tr>
+</table>
 
 ## Architecture
 
@@ -58,7 +71,7 @@ calling and system control, and client actions. Current status is tracked in
 |---|---|
 | Desktop / web | Tauri 2 (Rust), React, Vite, PWA manifest |
 | Backend | Node.js, Fastify, Prisma, JWT access + rotating refresh tokens |
-| AI | Groq (Llama 3.3 70B chat, Whisper speech-to-text), tool calling |
+| AI | Groq (GPT-OSS 120B chat + tool calling, Whisper speech-to-text) |
 | Data | PostgreSQL (Neon in production, Docker locally) |
 | Tooling | pnpm workspaces, Turborepo, TypeScript (strict), ESLint, Vitest |
 | Deployment | Netlify (static web + Fastify as Netlify Functions), NSIS/MSI installers |

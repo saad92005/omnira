@@ -42,7 +42,10 @@ export function registerChatRoutes(
     // off on any hosted deployment regardless of the user's own permission grant.
     const systemControlGranted =
       config.SYSTEM_CONTROL_AVAILABLE && (await permissionsService.isActive(userId, Capability.SystemControl));
-    const provider = new GroqProvider({ apiKey: config.GROQ_API_KEY });
+    const provider = new GroqProvider({
+      apiKey: config.GROQ_API_KEY,
+      ...(config.GROQ_MODEL ? { model: config.GROQ_MODEL } : {}),
+    });
     const agent = new ChatAgent(provider, logger, buildToolHandlers(systemControlGranted), resolvePersonaPrompt(agentId));
     const result = await agent.respond(state, message);
 

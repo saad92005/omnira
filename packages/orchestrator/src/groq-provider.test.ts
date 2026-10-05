@@ -36,7 +36,7 @@ function fakeStream(chunks: Array<{ content?: string; usage?: { prompt_tokens: n
   return (async function* () {
     for (const chunk of chunks) {
       yield {
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         choices: [{ delta: { content: chunk.content } }],
         usage: chunk.usage,
       };
@@ -63,17 +63,17 @@ describe("GroqProvider", () => {
     expect(collected).toEqual(["Hel", "lo"]);
     expect(result).toEqual({
       text: "Hello",
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       usage: { inputTokens: 10, outputTokens: 2 },
     });
   });
 
-  it("defaults to the llama-3.3-70b-versatile model and Groq's OpenAI-compatible base URL", async () => {
+  it("defaults to the openai/gpt-oss-120b model and Groq's OpenAI-compatible base URL", async () => {
     createMock.mockResolvedValue(fakeStream([]));
     const provider = new GroqProvider({ apiKey: "test-key" });
     await provider.generateReply([{ role: "user", content: "hi" }], () => {});
 
-    expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ model: "llama-3.3-70b-versatile" }));
+    expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ model: "openai/gpt-oss-120b" }));
   });
 
   it("wraps a failed request in an UpstreamError rather than leaking the raw SDK error", async () => {
@@ -91,7 +91,7 @@ describe("GroqProvider", () => {
     it("executes a requested tool and feeds the result back for a final answer", async () => {
       createMock
         .mockResolvedValueOnce({
-          model: "llama-3.3-70b-versatile",
+          model: "openai/gpt-oss-120b",
           choices: [
             {
               message: {
@@ -106,7 +106,7 @@ describe("GroqProvider", () => {
           usage: { prompt_tokens: 20, completion_tokens: 5 },
         })
         .mockResolvedValueOnce({
-          model: "llama-3.3-70b-versatile",
+          model: "openai/gpt-oss-120b",
           choices: [{ message: { role: "assistant", content: "It's sunny in Paris." } }],
           usage: { prompt_tokens: 30, completion_tokens: 6 },
         });
@@ -127,7 +127,7 @@ describe("GroqProvider", () => {
     it("returns a tool-execution error to the model as the tool result rather than throwing", async () => {
       createMock
         .mockResolvedValueOnce({
-          model: "llama-3.3-70b-versatile",
+          model: "openai/gpt-oss-120b",
           choices: [
             {
               message: {
@@ -140,7 +140,7 @@ describe("GroqProvider", () => {
           usage: { prompt_tokens: 10, completion_tokens: 2 },
         })
         .mockResolvedValueOnce({
-          model: "llama-3.3-70b-versatile",
+          model: "openai/gpt-oss-120b",
           choices: [{ message: { role: "assistant", content: "Sorry, that tool failed." } }],
           usage: { prompt_tokens: 15, completion_tokens: 4 },
         });
@@ -163,7 +163,7 @@ describe("GroqProvider", () => {
       createMock
         .mockRejectedValueOnce(new MockAPIError("Failed to call a function. Please adjust your prompt.", 400, "tool_use_failed"))
         .mockResolvedValueOnce({
-          model: "llama-3.3-70b-versatile",
+          model: "openai/gpt-oss-120b",
           choices: [{ message: { role: "assistant", content: "I can't do that directly, but here's what I can help with..." } }],
           usage: { prompt_tokens: 12, completion_tokens: 8 },
         });
@@ -195,7 +195,7 @@ describe("GroqProvider", () => {
 
     it("gives up after the maximum number of tool round-trips rather than looping forever", async () => {
       createMock.mockResolvedValue({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         choices: [
           {
             message: {

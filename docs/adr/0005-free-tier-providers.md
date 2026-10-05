@@ -77,3 +77,7 @@ are removed rather than kept as unused abstraction.
   `:free`-tagged models fluctuates more than Groq's stable free tier.
 - **Keeping OpenAI/Anthropic and asking the user to pay** — rejected per
   explicit instruction.
+
+## Update (2026-10)
+
+Groq retired its hosted Llama 3.x models. The default chat model is now `openai/gpt-oss-120b` (free tier, supports tool calling), and it can be overridden with the `GROQ_MODEL` environment variable. The decision to use Groq is unchanged.
